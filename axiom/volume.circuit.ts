@@ -15,7 +15,7 @@ import {
 
 // TODO: update these
 const volumeMappingSlot = 0;
-const oneMonthInBlocks = 7200 * 30;
+const blockInterval = 5;
 const volumeThreshold = 100e18;
 const VIP_REBATE = 2990;
 
@@ -28,8 +28,6 @@ export interface CircuitInputs {
   userAddress: CircuitValue;
   // The Uniswap V4 hook address.
   hookAddress: CircuitValue;
-  // The Uniswap V4 pool address.
-  poolAddress: CircuitValue;
   // The Uniswap V4 pool ID.
   poolId: CircuitValue;
   // The fee for the pool.
@@ -39,19 +37,18 @@ export interface CircuitInputs {
 // Default inputs to use (only for compiling the circuit).
 // TODO: update these.
 export const defaultInputs = {
-  blockNumber: 4000000,
-  userAddress: "0xEaa455e4291742eC362Bc21a8C46E5F2b5ed4701",
-  hookAddress: "0xEaa455e4291742eC362Bc21a8C46E5F2b5ed4701",
-  poolAddress: "0xEaa455e4291742eC362Bc21a8C46E5F2b5ed4701",
-  poolId: "0x000000000000000000000000Eaa455e4291742eC362Bc21a8C46E5F2b5ed4701",
-  poolFee: 1000,
+  blockNumber: 20,
+  userAddress: "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+  hookAddress: "0x0304dB7e57e2F6e5fE39Aa498c0bE815374F1859",
+  poolId: "0x4bc33d3648d3d594c33099a3c88705855d686b19e9e81d2e6406611823e1a6e1",
+  poolFee: 8388608,
 };
 
 // The Axiom circuit
 export const circuit = async (inputs: CircuitInputs) => {
   // Calculate historical block number for volume computation and future block number for deprecating the obtained fee rebate (if any).
-  const oneMonthBefore = sub(inputs.blockNumber.value(), oneMonthInBlocks);
-  const oneMonthAfter = add(inputs.blockNumber.value(), oneMonthInBlocks);
+  const oneMonthBefore = sub(inputs.blockNumber.value(), blockInterval);
+  const oneMonthAfter = add(inputs.blockNumber.value(), blockInterval);
 
   // Get historical volume one month before the current (given) block.
   // TODO: drill down the mapping.
