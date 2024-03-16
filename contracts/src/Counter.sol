@@ -38,9 +38,9 @@ contract Counter is BaseHook {
         return Hooks.Permissions({
             beforeInitialize: false,
             afterInitialize: false,
-            beforeAddLiquidity: true,
+            beforeAddLiquidity: false,
             afterAddLiquidity: false,
-            beforeRemoveLiquidity: true,
+            beforeRemoveLiquidity: false,
             afterRemoveLiquidity: false,
             beforeSwap: true,
             afterSwap: true,
@@ -88,6 +88,7 @@ contract Counter is BaseHook {
             manager.getSlot0(PoolIdLibrary.toId(key));
 
         console.log("swap fee", sqrtPriceX96);
+        console.log("SWAPPPPPPP");
 
         uint256 price = sqrtPriceX96ToUint(sqrtPriceX96, 18);
         console.log("price pre", price);

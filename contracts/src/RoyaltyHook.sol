@@ -11,7 +11,12 @@ import {BalanceDelta} from "v4-core/src/types/BalanceDelta.sol";
 import {AxiomV2Client} from "axiom-crypto/v2-periphery/client/AxiomV2Client.sol";
 import {CurrencyLibrary, Currency} from "v4-core/src/types/Currency.sol";
 
+
+import "forge-std/console.sol";
+
 contract RoyaltyHook is BaseHook, AxiomV2Client {
+    uint256 constant public TESTVAL = 3000;
+
     using PoolIdLibrary for PoolKey;
     using CurrencyLibrary for Currency;
 
@@ -130,10 +135,13 @@ contract RoyaltyHook is BaseHook, AxiomV2Client {
         override
         returns (bytes4)
     {
+        console.log("in before swap");
         address msgSender = abi.decode(data, (address));
         /// @dev The following line is a blatant security vulnerability. Please don't use it in production.
         balanceToken0Before = key.currency0.balanceOfSelf();
         poolManager.updateDynamicSwapFee(key, getUserSpecificFee(key, msgSender));
+
+        console.log('ending before swap');
         return BaseHook.beforeSwap.selector;
     }
 
@@ -142,6 +150,7 @@ contract RoyaltyHook is BaseHook, AxiomV2Client {
         override
         returns (bytes4)
     {
+        console.log("in after swap");
         uint256 balanceToken0After = key.currency0.balanceOfSelf();
         if (balanceToken0After >= balanceToken0Before) {
             userTradeVolume[key.toId()][msg.sender] += balanceToken0After - balanceToken0Before;
@@ -150,6 +159,9 @@ contract RoyaltyHook is BaseHook, AxiomV2Client {
         }
 
         poolManager.updateDynamicSwapFee(key, DEFAULT_FEE);
+
+        console.log("ending afterswap");
+
         return BaseHook.afterSwap.selector;
     }
 

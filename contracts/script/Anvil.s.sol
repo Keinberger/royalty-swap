@@ -17,8 +17,10 @@ import {CurrencyLibrary, Currency} from "v4-core/src/types/Currency.sol";
 
 import {SwapFeeLibrary} from "v4-core/src/libraries/SwapFeeLibrary.sol";
 
-import {Counter} from "../src/Counter.sol";
+import {RoyaltyHook} from "../src/RoyaltyHook.sol";
 import {HookMiner} from "../test/utils/HookMiner.sol";
+
+import "forge-std/console.sol";
 
 /// @notice Forge script for deploying v4 & hooks to **anvil**
 /// @dev This script only works on an anvil RPC because v4 exceeds bytecode limits
@@ -32,23 +34,22 @@ contract CounterScript is Script {
         IPoolManager manager = deployPoolManager();
 
         // hook contracts must have specific flags encoded in the address
-        uint160 permissions = uint160(
-            Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG | Hooks.BEFORE_ADD_LIQUIDITY_FLAG
-                | Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG
+        uint160 flags = uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG);
+        (address hookAddress, bytes32 salt) = HookMiner.find(
+            address(this),
+            flags,
+            type(RoyaltyHook).creationCode,
+            abi.encode(address(manager), address(1), 0, bytes32(0))
         );
-
-        // Mine a salt that will produce a hook address with the correct permissions
-        (address hookAddress, bytes32 salt) =
-            HookMiner.find(CREATE2_DEPLOYER, permissions, type(Counter).creationCode, abi.encode(address(manager)));
 
         // ----------------------------- //
         // Deploy the hook using CREATE2 //
         // ----------------------------- //
-        vm.broadcast();
-        Counter counter = new Counter{salt: salt}(manager);
-        require(address(counter) == hookAddress, "CounterScript: hook address mismatch");
+        // vm.broadcast();
+        RoyaltyHook royaltyHook = new RoyaltyHook{salt: salt}(IPoolManager(address(manager)), address(1), 0, bytes32(0));
+        require(address(royaltyHook) == hookAddress, "CounterTest: hook address mismatch");
 
-        // Additional helpers for interacting with the pool
+         // Additional helpers for interacting with the pool
         vm.startBroadcast();
         (PoolModifyLiquidityTest lpRouter, PoolSwapTest swapRouter,) =
             deployRouters(manager);
@@ -56,8 +57,8 @@ contract CounterScript is Script {
 
         // test the lifecycle (create pool, add liquidity, swap)
         vm.startBroadcast();
-        testLifecycle(manager, address(counter), lpRouter, swapRouter);
-        vm.stopBroadcast();
+        testLifecycle(manager, address(royaltyHook), lpRouter, swapRouter);
+        vm.stopBroadcast(); 
     }
 
     // -----------------------------------------------------------
@@ -116,6 +117,9 @@ contract CounterScript is Script {
         token0.approve(address(swapRouter), type(uint256).max);
         token1.approve(address(swapRouter), type(uint256).max);
 
+        console.log("VAL", RoyaltyHook(hook).TESTVAL());
+        
+
         // add full range liquidity to the pool
         lpRouter.modifyLiquidity(
             poolKey,
@@ -126,7 +130,7 @@ contract CounterScript is Script {
         );
         // swap some tokens
         bool zeroForOne = true;
-        int256 amountSpecified = 1 ether;
+        int256 amountSpecified = -1e18;
         IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
             zeroForOne: zeroForOne,
             amountSpecified: amountSpecified,
@@ -134,8 +138,12 @@ contract CounterScript is Script {
         });
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
-        swapRouter.swap(poolKey, params, testSettings, ZERO_BYTES);
+        swapRouter.swap(poolKey, params, testSettings, abi.encode(address(this)));
 
-        console.log("address swap", address(swapRouter));
+        ///@dev delete this to get rid of stack too deep
+        console.log("address lp", token0.balanceOf(address(manager)));
+        console.log("address lp", token1.balanceOf(address(manager)));
+        
+        // console.log("address swap", address(swapRouter));
     }
 }
