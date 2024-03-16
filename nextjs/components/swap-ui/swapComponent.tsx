@@ -143,15 +143,15 @@ function SwapComponent() {
     functionName: "swap",
     args: [
       {
-        currency0: fromCurrency,
-        currency1: toCurrency,
-        fee: Number(swapFee),
-        tickSpacing: Number(tickSpacing),
+        currency0: "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+        currency1: "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+        fee: "0x800000",
+        tickSpacing: Number(60),
         hooks: contracts.RoyaltyPool.address,
       },
       {
         zeroForOne: true,
-        amountSpecified: parseEther(fromAmount), // TODO: assumes tokens are always 18 decimals
+        amountSpecified: -parseEther(fromAmount), // TODO: assumes tokens are always 18 decimals
         sqrtPriceLimitX96:
           fromCurrency.toLowerCase() < toCurrency.toLowerCase() ? MIN_SQRT_PRICE_LIMIT : MAX_SQRT_PRICE_LIMIT, // unlimited impact
       },
