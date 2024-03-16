@@ -27,8 +27,8 @@ import "forge-std/console.sol";
 contract CounterScript is Script {
     PoolSwapTest internal swapRouter = PoolSwapTest(0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9);
     MockERC20 internal token0 = MockERC20(0x0165878A594ca255338adfa4d48449f69242Eb8F);
-    MockERC20 internal token1 = MockERC20(0x5FC8d32690cc91D4c39d9d3abcBD16989F875707);
-    address internal hook = 0x030Bcfe20E864DbF109c29ece904f3e53Da6ed09;
+    MockERC20 internal token1 = MockERC20(0xa513E6E4b8f2a923D98304ec87F64353C4D5C853);
+    address internal hook = 0x0304dB7e57e2F6e5fE39Aa498c0bE815374F1859;
 
     function setUp() public {
         uint256 NineNthPrivateKey = 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6;
@@ -49,7 +49,7 @@ contract CounterScript is Script {
         token1.approve(address(swapRouter), type(uint256).max);
 
         bool zeroForOne = true;
-        int256 amountSpecified = 1e18;
+        int256 amountSpecified = -1e18;
         IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
             zeroForOne: zeroForOne,
             amountSpecified: amountSpecified,
