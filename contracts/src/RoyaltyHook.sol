@@ -12,16 +12,12 @@ import {BalanceDelta} from "v4-core/src/types/BalanceDelta.sol";
 contract RoyaltyHook is BaseHook {
     using PoolIdLibrary for PoolKey;
 
+    mapping(PoolId poolId => mapping(address user => uint24 fee)) public userSpecificFees;
+
     // NOTE: ---------------------------------------------------------
     // state variables should typically be unique to a pool
     // a single hook contract should be able to service multiple pools
     // ---------------------------------------------------------------
-
-    mapping(PoolId => uint256 count) public beforeSwapCount;
-    mapping(PoolId => uint256 count) public afterSwapCount;
-
-    mapping(PoolId => uint256 count) public beforeAddLiquidityCount;
-    mapping(PoolId => uint256 count) public beforeRemoveLiquidityCount;
 
     constructor(IPoolManager _poolManager) BaseHook(_poolManager) {}
 
@@ -29,9 +25,9 @@ contract RoyaltyHook is BaseHook {
         return Hooks.Permissions({
             beforeInitialize: false,
             afterInitialize: false,
-            beforeAddLiquidity: true,
+            beforeAddLiquidity: false,
             afterAddLiquidity: false,
-            beforeRemoveLiquidity: true,
+            beforeRemoveLiquidity: false,
             afterRemoveLiquidity: false,
             beforeSwap: true,
             afterSwap: true,
@@ -44,12 +40,14 @@ contract RoyaltyHook is BaseHook {
     // NOTE: see IHooks.sol for function documentation
     // -----------------------------------------------
 
-    function beforeSwap(address, PoolKey calldata key, IPoolManager.SwapParams calldata, bytes calldata)
+    function beforeSwap(address, PoolKey calldata key, IPoolManager.SwapParams calldata, bytes calldata data)
         external
         override
         returns (bytes4)
     {
-        beforeSwapCount[key.toId()]++;
+        address msgSender = abi.decode(data, (address));
+        /// @dev The following line is a blatant security vulnerability. Please don't use it in production.
+        poolManager.updateDynamicSwapFee(key, userSpecificFees[key.toId()][msgSender]);
         return BaseHook.beforeSwap.selector;
     }
 
@@ -58,27 +56,25 @@ contract RoyaltyHook is BaseHook {
         override
         returns (bytes4)
     {
-        afterSwapCount[key.toId()]++;
+        poolManager.updateDynamicSwapFee(key, key.fee);
         return BaseHook.afterSwap.selector;
     }
 
-    function beforeAddLiquidity(
-        address,
-        PoolKey calldata key,
-        IPoolManager.ModifyLiquidityParams calldata,
-        bytes calldata
-    ) external override returns (bytes4) {
-        beforeAddLiquidityCount[key.toId()]++;
+    function beforeAddLiquidity(address, PoolKey calldata, IPoolManager.ModifyLiquidityParams calldata, bytes calldata)
+        external
+        pure
+        override
+        returns (bytes4)
+    {
         return BaseHook.beforeAddLiquidity.selector;
     }
 
     function beforeRemoveLiquidity(
         address,
-        PoolKey calldata key,
+        PoolKey calldata,
         IPoolManager.ModifyLiquidityParams calldata,
         bytes calldata
-    ) external override returns (bytes4) {
-        beforeRemoveLiquidityCount[key.toId()]++;
+    ) external pure override returns (bytes4) {
         return BaseHook.beforeRemoveLiquidity.selector;
     }
 }
