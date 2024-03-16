@@ -1,19 +1,12 @@
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
 import ActivateFeeStatus from "../base/ActivateFeeStatus";
 import Fee from "../base/Fee";
 import SuccessBox from "../base/SuccessBox";
 import { NumericSwapInput } from "../base/numeric-swap-input";
 import { parseEther } from "viem";
-import { useAccount, useChainId, useToken, useWaitForTransaction } from "wagmi";
-import deployedContracts from "~~/generated/deployedContracts";
-import {
-  counterAddress,
-  poolSwapTestAddress,
-  useErc20Allowance,
-  useErc20Approve,
-  usePoolSwapTestSwap,
-} from "~~/generated/generated";
+import { useAccount, useChainId, useContractWrite, useToken, useWaitForTransaction } from "wagmi";
+import contracts from "~~/config/contracts";
+import { counterAddress, poolSwapTestAddress, useErc20Allowance, useErc20Approve } from "~~/generated/generated";
 import { TOKEN_ADDRESSES } from "~~/utils/config";
 import { BLANK_TOKEN, MAX_SQRT_PRICE_LIMIT, MAX_UINT, MIN_SQRT_PRICE_LIMIT, ZERO_ADDR } from "~~/utils/constants";
 
@@ -99,7 +92,7 @@ function SwapComponent() {
   const [txHash, setTxHash] = useState<`0x${string}`>("0x00");
 
   // Use the useWaitForTransaction hook from 'wagmi' to get the transaction receipt
-  const { data: txReceipt, isSuccess: isTxConfirmed } = useWaitForTransaction({
+  const { isSuccess: isTxConfirmed } = useWaitForTransaction({
     hash: txHash,
   });
 
@@ -113,63 +106,62 @@ function SwapComponent() {
     args: [swapRouterAddress, MAX_UINT],
   });
 
-  const swap = usePoolSwapTestSwap();
-
-  const handleSwap = async () => {
-    setIsSwapping(true);
-    setSwapError("");
-    setSwapSuccess(false);
-
-    try {
-      // Execute the swap
-      const result = await swap.writeAsync({
-        args: [
-          {
-            currency0: fromCurrency.toLowerCase() < toCurrency.toLowerCase() ? fromCurrency : toCurrency,
-            currency1: fromCurrency.toLowerCase() < toCurrency.toLowerCase() ? toCurrency : fromCurrency,
-            fee: Number(swapFee),
-            tickSpacing: Number(tickSpacing),
-            hooks: hookAddress,
-          },
-          {
-            zeroForOne: fromCurrency.toLowerCase() < toCurrency.toLowerCase(),
-            amountSpecified: parseEther(fromAmount), // TODO: assumes tokens are always 18 decimals
-            sqrtPriceLimitX96:
-              fromCurrency.toLowerCase() < toCurrency.toLowerCase() ? MIN_SQRT_PRICE_LIMIT : MAX_SQRT_PRICE_LIMIT, // unlimited impact
-          },
-          {
-            withdrawTokens: true,
-            settleUsingTransfer: true,
-            currencyAlreadySent: false,
-          },
-          hookData as `0x${string}`,
-        ],
-      });
-
-      // Set the transaction hash for waiting on the transaction to be mined
-      setTxHash(result.hash);
-      console.log("Swap initiated, transaction hash:", result.hash);
-
-      // You might want to show transaction pending message until the transaction is confirmed
-    } catch (error) {
-      setIsSwapping(false);
-      setSwapError(error.message || "An error occurred during the swap.");
-      console.error("Swap failed:", error);
-    }
-  };
+  const {
+    data: swapData,
+    isSuccess: swapIsSuccess,
+    isError: swapIsError,
+    write: executeSwap,
+    error: swapTxError,
+  } = useContractWrite({
+    address: contracts.PoolSwapTest.address,
+    abi: contracts.PoolSwapTest.abi,
+    functionName: "swap",
+    args: [
+      {
+        currency0: fromCurrency.toLowerCase() < toCurrency.toLowerCase() ? fromCurrency : toCurrency,
+        currency1: fromCurrency.toLowerCase() < toCurrency.toLowerCase() ? toCurrency : fromCurrency,
+        fee: Number(swapFee),
+        tickSpacing: Number(tickSpacing),
+        hooks: hookAddress,
+      },
+      {
+        zeroForOne: fromCurrency.toLowerCase() < toCurrency.toLowerCase(),
+        amountSpecified: parseEther(fromAmount), // TODO: assumes tokens are always 18 decimals
+        sqrtPriceLimitX96:
+          fromCurrency.toLowerCase() < toCurrency.toLowerCase() ? MIN_SQRT_PRICE_LIMIT : MAX_SQRT_PRICE_LIMIT, // unlimited impact
+      },
+      {
+        withdrawTokens: true,
+        settleUsingTransfer: true,
+        currencyAlreadySent: false,
+      },
+      hookData as `0x${string}`,
+    ],
+  });
 
   useEffect(() => {
     setHookAddress(counterAddress[chainId as keyof typeof counterAddress] ?? ZERO_ADDR);
   }, [chainId]);
 
-  // Success message once the transaction has been confirmed on the blockchain
   useEffect(() => {
-    if (isTxConfirmed && txReceipt) {
-      setIsSwapping(false);
-      setSwapSuccess(true);
-      console.log("Swap confirmed, transaction receipt:", txReceipt);
+    if (swapIsSuccess && swapData) {
+      setTxHash(swapData.hash);
     }
-  }, [isTxConfirmed, txReceipt]);
+  }, [swapIsSuccess, swapData]);
+
+  useEffect(() => {
+    if (isTxConfirmed && !swapIsError) {
+      setSwapSuccess(true);
+      setIsSwapping(false);
+    }
+  }, [isTxConfirmed, swapIsError]);
+
+  useEffect(() => {
+    if (swapIsError && swapTxError) {
+      setIsSwapping(false);
+      setSwapError(swapTxError.message);
+    }
+  }, [swapIsError, swapTxError]);
 
   return (
     <div className="card shadow-2xl pt-6 pb-2 px-3 bg-white rounded-2xl border-2  min-w-[34rem] max-w-xl transition-shadow">
@@ -272,7 +264,10 @@ function SwapComponent() {
 
             <button
               className="w-full py-3 rounded-2xl bg-[#FF73FF] text-[#FEFCFE] font-semibold text-lg focus:outline-none focus:ring-indigo-500 transition-all"
-              onClick={handleSwap}
+              onClick={() => {
+                setIsSwapping(true);
+                executeSwap();
+              }}
               disabled={
                 isSwapping ||
                 fromCurrency === BLANK_TOKEN.address ||
