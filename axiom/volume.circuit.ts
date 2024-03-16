@@ -30,8 +30,6 @@ export interface CircuitInputs {
   hookAddress: CircuitValue;
   // The Uniswap V4 pool ID.
   poolId: CircuitValue;
-  // The fee for the pool.
-  poolFee: CircuitValue;
 }
 
 // Default inputs to use (only for compiling the circuit).
@@ -41,7 +39,6 @@ export const defaultInputs = {
   userAddress: "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
   hookAddress: "0x0304dB7e57e2F6e5fE39Aa498c0bE815374F1859",
   poolId: "0x4bc33d3648d3d594c33099a3c88705855d686b19e9e81d2e6406611823e1a6e1",
-  poolFee: 8388608,
 };
 
 // The Axiom circuit
