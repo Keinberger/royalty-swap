@@ -1,4 +1,4 @@
-import { ERC20Abi, PoolSwapTestAbi } from "./abis";
+import { ERC20Abi, HookAbi, PoolSwapTestAbi } from "./abis";
 import { Abi } from "viem";
 
 export const contracts = {
@@ -16,7 +16,7 @@ export const contracts = {
   },
   RoyaltyPool: {
     address: "0x0304dB7e57e2F6e5fE39Aa498c0bE815374F1859",
-    abi: PoolSwapTestAbi as Abi,
+    abi: HookAbi as Abi,
   },
 };
 
