@@ -49,6 +49,8 @@ contract RoyaltyHookTest is Test, Deployers {
         poolId = key.toId();
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
 
+        
+
         // Provide liquidity to the pool
         modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-60, 60, 10 ether), ZERO_BYTES);
         modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-120, 120, 10 ether), ZERO_BYTES);

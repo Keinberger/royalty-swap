@@ -105,6 +105,10 @@ contract RoyaltyHook is BaseHook, AxiomV2Client {
         userSpecificFeeRebate[poolId][userAddress] = FeeRebate({amount: newFeeRebateAmount, expiry: newFeeRebateExpiry});
     }
 
+    function testUpdateFee(uint24 newFeeRebateAmount, uint232 newFeeRebateExpiry, address userAddress, PoolId poolId) external {
+        userSpecificFeeRebate[poolId][userAddress] = FeeRebate({amount: newFeeRebateAmount, expiry: newFeeRebateExpiry});
+    }
+
     /// #endregion Axiom V2 Callbacks
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
