@@ -18,7 +18,7 @@ function SwapComponent() {
   const tokens = TOKEN_ADDRESSES.map(address => useToken({ address: address[chainId as keyof typeof address] }));
   console.log("🚀 ~ file: swapComponent.tsx:22 ~ SwapComponent ~ tokens:", tokens);
 
-  const swapRouterAddress = poolSwapTestAddress[chainId as keyof typeof poolSwapTestAddress];
+  const swapRouterAddress = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9";
 
   const [fromCurrency, setFromCurrency] = useState(BLANK_TOKEN.address);
   const [toCurrency, setToCurrency] = useState(BLANK_TOKEN.address);
