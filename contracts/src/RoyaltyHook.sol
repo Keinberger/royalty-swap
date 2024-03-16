@@ -151,7 +151,14 @@ contract RoyaltyHook is BaseHook, AxiomV2Client {
         balanceToken0Before = key.currency0.balanceOfSelf();
         poolManager.updateDynamicSwapFee(key, getUserSpecificFee(key, msgSender));
 
-        // bytes32 _key;= key.toId();
+        PoolId id = key.toId();
+        bytes32 _id;
+        assembly {
+            _id := id
+        }
+
+        console.log("pool id");
+        console.logBytes32(_id);
 
         console.log("ending before swap");
         return BaseHook.beforeSwap.selector;
