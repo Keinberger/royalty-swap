@@ -15,6 +15,7 @@
     "wagmi": "cd ../ && forge build --force && cd nextjs/ && wagmi generate"
   },
   "dependencies": {
+    "@axiom-crypto/react": "^2.0.6",
     "@ethersproject/providers": "^5.7.2",
     "@heroicons/react": "^2.0.11",
     "@nextui-org/react": "^2.1.13",

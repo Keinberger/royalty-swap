@@ -16,6 +16,7 @@ const nextConfig = {
     config.resolve.fallback = { fs: false, net: false, tls: false };
     return config;
   },
+  transpilePackages: ["@axiom-crypto/react"],
 };
 
 module.exports = nextConfig;

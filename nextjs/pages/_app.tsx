@@ -9,6 +9,7 @@ import { useDarkMode } from "usehooks-ts";
 import { WagmiConfig } from "wagmi";
 import { BlockieAvatar } from "~~/components/scaffold-eth";
 import { useNativeCurrencyPrice } from "~~/hooks/scaffold-eth";
+import AxiomProvider from "~~/providers/AxiomProvider";
 import { useGlobalState } from "~~/services/store/store";
 import { wagmiConfig } from "~~/services/web3/wagmiConfig";
 import { appChains } from "~~/services/web3/wagmiConnectors";
@@ -32,25 +33,27 @@ const ScaffoldEthApp = ({ Component, pageProps }: AppProps) => {
   }, [isDarkMode]);
 
   return (
-    <WagmiConfig config={wagmiConfig}>
-      <NextNProgress />
-      <RainbowKitProvider
-        chains={appChains.chains}
-        avatar={BlockieAvatar}
-        theme={isDarkTheme ? darkTheme() : lightTheme()}
-      >
-        <div className="flex flex-col min-h-screen">
-          <NextUIProvider>
-            <main className="relative flex flex-col flex-1">
-              <Component {...pageProps} />
-            </main>
-          </NextUIProvider>
+    <AxiomProvider>
+      <WagmiConfig config={wagmiConfig}>
+        <NextNProgress />
+        <RainbowKitProvider
+          chains={appChains.chains}
+          avatar={BlockieAvatar}
+          theme={isDarkTheme ? darkTheme() : lightTheme()}
+        >
+          <div className="flex flex-col min-h-screen">
+            <NextUIProvider>
+              <main className="relative flex flex-col flex-1">
+                <Component {...pageProps} />
+              </main>
+            </NextUIProvider>
 
-          {/* <Footer /> */}
-        </div>
-        <Toaster />
-      </RainbowKitProvider>
-    </WagmiConfig>
+            {/* <Footer /> */}
+          </div>
+          <Toaster />
+        </RainbowKitProvider>
+      </WagmiConfig>
+    </AxiomProvider>
   );
 };
 
