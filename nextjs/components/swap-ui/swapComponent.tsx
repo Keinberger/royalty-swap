@@ -46,7 +46,7 @@ function SwapComponent() {
   const [approveSuccess, setApproveSuccess] = useState(false);
 
   // TODO: delete once useEligibleForPremiumPlan is implemented
-  const [isEligibleForPremium, setIsEligibleForPremiumPlan] = useState(false);
+  const [isEligibleForPremium, setIsEligibleForPremiumPlan] = useState(true);
 
   const [isActivatingPremium, setIsActivatingPremium] = useState(false);
   const [isPremiumActivated, setIsPremiumActivated] = useState(false);
@@ -215,7 +215,7 @@ function SwapComponent() {
           tokenOnChange={e => setToCurrency(e.target.value)}
         />
 
-        {fromCurrency !== BLANK_TOKEN.address && fromTokenAllowance.data === 0n && (
+        {true && (
           <button
             className="w-full py-3 rounded-2xl bg-[#FF73FF] text-[#FEFCFE] font-semibold text-lg focus:outline-none focus:ring-indigo-500 transition-all"
             onClick={() => {
@@ -246,7 +246,7 @@ function SwapComponent() {
           </div>
         )}
 
-        {approveSuccess && !isTxConfirmed && (
+        {true /* approveSuccess && !isTxConfirmed */ && (
           <>
             {!isPremiumActivated &&
               (!isEligibleForPremium ? (
