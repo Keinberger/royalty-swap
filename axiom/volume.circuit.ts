@@ -16,7 +16,8 @@ import {
 // TODO: update these
 const volumeMappingSlot = 0;
 const oneMonthInBlocks = 7200 * 30;
-const volumeThreshold = 1000e18;
+const volumeThreshold = 100e18;
+const VIP_REBATE = 2990;
 
 // Schema for the inputs to the circuit.
 export interface CircuitInputs {
@@ -81,7 +82,7 @@ export const circuit = async (inputs: CircuitInputs) => {
   let feeRebate = constant(0);
   if (volume.value() > volumeThreshold) {
     // If the volume is greater than the threshold, calculate the fee rebate.
-    feeRebate = div(inputs.poolFee.value(), constant(1.25));
+    feeRebate = constant(VIP_REBATE);
   }
 
   // Values to expose to our contract callback as `axiomResults`.

@@ -54,7 +54,7 @@ export const SwapHeader = () => {
       }}
     >
       <NavbarBrand>
-        <p className="font-bold text-inherit">ZK-hooKerZ</p>
+        <p className="font-bold text-inherit">RoyaltySwap</p>
       </NavbarBrand>
       <NavbarContent justify="end">
         <NavbarItem>

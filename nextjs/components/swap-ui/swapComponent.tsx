@@ -1,15 +1,40 @@
 import React, { useEffect, useState } from "react";
+import compiledCircuit from "../../../axiom/data/compiled.json";
+import { CircuitInputs, circuit } from "../../../axiom/volume.circuit";
 import ActivateFeeStatus from "../base/ActivateFeeStatus";
 import Fee from "../base/Fee";
 import SuccessBox from "../base/SuccessBox";
 import { NumericSwapInput } from "../base/numeric-swap-input";
+import { Axiom, UserInput } from "@axiom-crypto/client";
 import { parseEther } from "viem";
 import { encodeAbiParameters } from "viem";
 import { useAccount, useChainId, useContractWrite, useToken, useWaitForTransaction } from "wagmi";
+import { useBlockNumber } from "wagmi";
 import contracts from "~~/config/contracts";
 import { counterAddress, useErc20Allowance, useErc20Approve } from "~~/generated/generated";
 import { TOKEN_ADDRESSES } from "~~/utils/config";
 import { BLANK_TOKEN, MAX_SQRT_PRICE_LIMIT, MAX_UINT, MIN_SQRT_PRICE_LIMIT, ZERO_ADDR } from "~~/utils/constants";
+
+const axiomCall = async (input: UserInput<CircuitInputs>) => {
+  const axiom = new Axiom({
+    circuit: circuit,
+    compiledCircuit: compiledCircuit,
+    chainId: "31337",
+    provider: "http://localhost:8545",
+    privateKey: "2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6",
+    callback: {
+      target: "0x4A4e2D8f3fBb3525aD61db7Fc843c9bf097c362e",
+    },
+  });
+  await axiom.init();
+  const args = await axiom.prove(input);
+  console.log("ZK proof generated successfully.");
+
+  console.log("Sending Query to Axiom on-chain...");
+  const receipt = await axiom.sendQuery();
+  console.log("Transaction receipt:", receipt);
+  console.log(`View your Query on Axiom Explorer: https://explorer.axiom.xyz/v2/sepolia/query/${args.queryId}`);
+};
 
 function SwapComponent() {
   const { address } = useAccount();
@@ -48,6 +73,7 @@ function SwapComponent() {
   const [showPremiumActivated, setShowPremiumActivated] = useState(false);
   const [showSwapSuccess, setShowSwapSuccess] = useState(false);
   const [showApproveSuccess, setShowApproveSuccess] = useState(false);
+  const { data: blockNumber } = useBlockNumber();
 
   // const poolAddress = deployedContracts[chainId as keyof typeof deployedContracts][0].contracts.PoolSwapTest.address;
   // TODO: CUSTOM COMPONENTS TO BUILD
@@ -259,6 +285,14 @@ function SwapComponent() {
 
                     setIsActivatingPremium(true);
                     setIsPremiumActivated(true);
+                    axiomCall({
+                      blockNumber: blockNumber,
+                      userAddress: address,
+                      hookAddress: contracts.RoyaltyPool.address,
+                      poolAddress: contracts.PoolSwapTest.address,
+                      poolId: "0x", // TODO: find this
+                      poolFee: 3000,
+                    });
                   }}
                 />
               )
