@@ -9,6 +9,7 @@ import contracts from "~~/config/contracts";
 import { counterAddress, poolSwapTestAddress, useErc20Allowance, useErc20Approve } from "~~/generated/generated";
 import { TOKEN_ADDRESSES } from "~~/utils/config";
 import { BLANK_TOKEN, MAX_SQRT_PRICE_LIMIT, MAX_UINT, MIN_SQRT_PRICE_LIMIT, ZERO_ADDR } from "~~/utils/constants";
+import { encodeAbiParameters } from 'viem'
 
 function SwapComponent() {
   const { address } = useAccount();
@@ -135,7 +136,13 @@ function SwapComponent() {
         settleUsingTransfer: true,
         currencyAlreadySent: false,
       },
-      hookData as `0x${string}`,
+      // msg.sender 
+      encodeAbiParameters(
+        [
+          { name: 'x', type: 'address' },
+        ],
+        ["0xa0Ee7A142d267C1f36714E4a8F75612F20a79720"]
+      ),
     ],
   });
 
