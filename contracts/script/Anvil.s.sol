@@ -143,9 +143,9 @@ contract CounterScript is Script {
         });
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
-        swapRouter.swap(poolKey, params, testSettings, abi.encode(msg.sender));
+        // swapRouter.swap(poolKey, params, testSettings, abi.encode(msg.sender));
 
         console.log('balance swapper', token0.balanceOf(address(msg.sender)));
-        // console.log("address swap", address(swapRouter));
+        console.log("address swap", address(swapRouter));
     }
 }
