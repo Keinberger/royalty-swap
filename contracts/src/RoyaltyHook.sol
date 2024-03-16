@@ -20,9 +20,6 @@ contract RoyaltyHook is BaseHook, AxiomV2Client {
     using PoolIdLibrary for PoolKey;
     using CurrencyLibrary for Currency;
 
-    /// @dev Axiom V2 Query Schema.
-    bytes32 immutable QUERY_SCHEMA;
-
     /// @dev Source chain id for the Axiom V2 callback.
     uint64 immutable SOURCE_CHAIN_ID;
 
@@ -31,6 +28,9 @@ contract RoyaltyHook is BaseHook, AxiomV2Client {
     /// @notice User trade volume for a given pool and user.
     /// @dev Always in token0 terms.
     mapping(PoolId poolId => mapping(address user => uint256 tradeVolume)) public userTradeVolume;
+
+    /// @dev Axiom V2 Query Schema.
+    bytes32 QUERY_SCHEMA;
 
     /// @dev Used internally to store the pool balance of token0 before a swap.
     /// TODO: Should be replaced with transient storage in the future.
@@ -60,6 +60,10 @@ contract RoyaltyHook is BaseHook, AxiomV2Client {
     ) BaseHook(_poolManager) AxiomV2Client(_axiomV2QueryAddress) {
         QUERY_SCHEMA = _querySchema;
         SOURCE_CHAIN_ID = _callbackSourceChainId;
+    }
+
+    function setQUERY_SCHEMA(bytes32 _querySchema) external {
+        QUERY_SCHEMA = _querySchema;
     }
 
     /// #region Axiom V2 Callbacks
