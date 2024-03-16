@@ -11,11 +11,11 @@ export const contracts = {
     abi: ERC20Abi as Abi,
   },
   PoolSwapTest: {
-    address: "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    address: "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
     abi: PoolSwapTestAbi as Abi,
   },
   RoyaltyPool: {
-    address: "0x0300e9C16b3F11F7C0337a5C8674323a161e38D0",
+    address: "0x030Bcfe20E864DbF109c29ece904f3e53Da6ed09",
     abi: PoolSwapTestAbi as Abi,
   },
 };
