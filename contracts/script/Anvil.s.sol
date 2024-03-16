@@ -91,8 +91,8 @@ contract CounterScript is Script {
             token0 = tokenA;
             token1 = tokenB;
         } else {
-            token0 = tokenB;
-            token1 = tokenA;
+            token0 = tokenA;
+            token1 = tokenB;
         }
     }
 

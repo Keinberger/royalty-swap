@@ -94,9 +94,7 @@ contract RoyaltyHookTest is Test, Deployers {
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
 
 
-        // 0xb744e3658a5576ebfc9b2dcbdc61741de28becf1e4f73de44793b1bff816c21a
-        PoolId id = key.toId();
-        royaltyHook.testUpdateFee(100, 1810632682, 0xa0Ee7A142d267C1f36714E4a8F75612F20a79720, id);
+        royaltyHook.testUpdateFee(100, 1810632682, 0xa0Ee7A142d267C1f36714E4a8F75612F20a79720);
         swapRouter.swap(key, params, testSettings, abi.encode(address(msg.sender)));
     }
 }
