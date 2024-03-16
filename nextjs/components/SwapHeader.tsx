@@ -60,12 +60,6 @@ export const SwapHeader = () => {
         <NavbarItem>
           <RainbowKitCustomConnectButton />
         </NavbarItem>
-        <NavbarItem>
-          <NetworkSwitcher />
-        </NavbarItem>
-        <NavbarItem>
-          <FaucetButton />
-        </NavbarItem>
       </NavbarContent>
     </Navbar>
   );
