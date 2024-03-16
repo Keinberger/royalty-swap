@@ -5,7 +5,7 @@ import ActivateFeeStatus from "../base/ActivateFeeStatus";
 import Fee from "../base/Fee";
 import SuccessBox from "../base/SuccessBox";
 import { NumericSwapInput } from "../base/numeric-swap-input";
-// import { Axiom, UserInput } from "@axiom-crypto/client";
+import { Axiom, UserInput } from "@axiom-crypto/client";
 import { parseEther } from "viem";
 import { encodeAbiParameters } from "viem";
 import { useAccount, useChainId, useContractWrite, useToken, useWaitForTransaction } from "wagmi";
@@ -15,31 +15,33 @@ import { useErc20Allowance, useErc20Approve } from "~~/generated/generated";
 import { TOKEN_ADDRESSES } from "~~/utils/config";
 import { BLANK_TOKEN, MAX_SQRT_PRICE_LIMIT, MAX_UINT, MIN_SQRT_PRICE_LIMIT } from "~~/utils/constants";
 
-// const axiomCall = async (input: UserInput<CircuitInputs>) => {
-//   const axiom = new Axiom({
-//     circuit: circuit,
-//     compiledCircuit: compiledCircuit,
-//     chainId: "31337",
-//     provider: "http://localhost:8545",
-//     privateKey: "2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6",
-//     callback: {
-//       target: "0x4A4e2D8f3fBb3525aD61db7Fc843c9bf097c362e",
-//     },
-//   });
-//   await axiom.init();
-//   const args = await axiom.prove(input);
-//   console.log("ZK proof generated successfully.");
+const axiom = new Axiom({
+  circuit: circuit,
+  compiledCircuit: compiledCircuit,
+  chainId: "31337",
+  provider: "http://localhost:8545",
+  privateKey: "2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6",
+  callback: {
+    target: contracts.RoyaltyPool.address,
+  },
+});
+await axiom.init();
+const axiomCall = async (input: UserInput<CircuitInputs>) => {
+  const args = await axiom.prove(input);
+  console.log("ZK proof generated successfully.");
 
-//   console.log("Sending Query to Axiom on-chain...");
-//   const receipt = await axiom.sendQuery();
-//   console.log("Transaction receipt:", receipt);
-//   console.log(`View your Query on Axiom Explorer: https://explorer.axiom.xyz/v2/sepolia/query/${args.queryId}`);
-// };
+  console.log("Sending Query to Axiom on-chain...");
+  const receipt = await axiom.sendQuery();
+  console.log("Transaction receipt:", receipt);
+  console.log(`View your Query on Axiom Explorer: https://explorer.axiom.xyz/v2/sepolia/query/${args.queryId}`);
+};
 
 function SwapComponent() {
   const { address } = useAccount();
   const chainId = useChainId();
   const { data: blockNumber } = useBlockNumber();
+
+  const poolFee = "0x800000";
 
   const tokens = TOKEN_ADDRESSES.map(address => useToken({ address: address[chainId as keyof typeof address] }));
   console.log("🚀 ~ file: swapComponent.tsx:22 ~ SwapComponent ~ tokens:", tokens);
@@ -78,7 +80,79 @@ function SwapComponent() {
   // TODO: CUSTOM COMPONENTS TO BUILD
   // const isEligibleForPremium = useEligibleForPremiumPlan(walletAddress)
   // const toAmount = useToAmount();
-  // const generateZkProof = () => {};
+  // const generateZkProof = () => {}                                  ;
+
+  // Use state hook to hold the transaction hash
+  const [txHash, setTxHash] = useState<`0x${string}`>("0x00");
+
+  // Use the useWaitForTransaction hook from 'wagmi' to get the transaction receipt
+  const { isSuccess: isTxConfirmed } = useWaitForTransaction({
+    hash: txHash,
+  });
+
+  const fromTokenAllowance = useErc20Allowance({
+    address: fromCurrency,
+    args: [address ?? "0x0", swapRouterAddress],
+  });
+
+  const tokenApprove = useErc20Approve({
+    address: fromCurrency,
+    args: [swapRouterAddress, MAX_UINT],
+  });
+
+  const {
+    data: swapData,
+    isSuccess: swapIsSuccess,
+    isError: swapIsError,
+    write: executeSwap,
+    error: swapTxError,
+  } = useContractWrite({
+    address: contracts.PoolSwapTest.address,
+    abi: contracts.PoolSwapTest.abi,
+    functionName: "swap",
+    args: [
+      {
+        currency0: contracts.Token0.address,
+        currency1: contracts.Token1.address,
+        fee: poolFee,
+        tickSpacing: Number(60),
+        hooks: contracts.RoyaltyPool.address,
+      },
+      {
+        zeroForOne: true,
+        amountSpecified: -parseEther(fromAmount), // TODO: assumes tokens are always 18 decimals
+        sqrtPriceLimitX96:
+          fromCurrency.toLowerCase() < toCurrency.toLowerCase() ? MIN_SQRT_PRICE_LIMIT : MAX_SQRT_PRICE_LIMIT, // unlimited impact
+      },
+      {
+        withdrawTokens: true,
+        settleUsingTransfer: true,
+        currencyAlreadySent: false,
+      },
+      // msg.sender
+      encodeAbiParameters([{ name: "x", type: "address" }], ["0xa0Ee7A142d267C1f36714E4a8F75612F20a79720"]),
+    ],
+  });
+
+  useEffect(() => {
+    if (swapIsSuccess && swapData) {
+      setTxHash(swapData.hash);
+    }
+  }, [swapIsSuccess, swapData]);
+
+  useEffect(() => {
+    if (isTxConfirmed) {
+      setIsSwapping(false);
+      setSwapSuccess(true);
+    }
+  }, [isTxConfirmed, swapIsError]);
+
+  useEffect(() => {
+    if (swapIsError && swapTxError) {
+      setIsSwapping(false);
+      setSwapError(swapTxError.message);
+    }
+  }, [swapIsError, swapTxError]);
 
   useEffect(() => {
     if (zkPublishingSuccess) {
@@ -112,78 +186,6 @@ function SwapComponent() {
       return () => clearTimeout(timer);
     }
   }, [swapSuccess]);
-
-  // Use state hook to hold the transaction hash
-  const [txHash, setTxHash] = useState<`0x${string}`>("0x00");
-
-  // Use the useWaitForTransaction hook from 'wagmi' to get the transaction receipt
-  const { isSuccess: isTxConfirmed } = useWaitForTransaction({
-    hash: txHash,
-  });
-
-  const fromTokenAllowance = useErc20Allowance({
-    address: fromCurrency,
-    args: [address ?? "0x0", swapRouterAddress],
-  });
-
-  const tokenApprove = useErc20Approve({
-    address: fromCurrency,
-    args: [swapRouterAddress, MAX_UINT],
-  });
-
-  const {
-    data: swapData,
-    isSuccess: swapIsSuccess,
-    isError: swapIsError,
-    write: executeSwap,
-    error: swapTxError,
-  } = useContractWrite({
-    address: contracts.PoolSwapTest.address,
-    abi: contracts.PoolSwapTest.abi,
-    functionName: "swap",
-    args: [
-      {
-        currency0: "0x0165878A594ca255338adfa4d48449f69242Eb8F",
-        currency1: "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
-        fee: "0x800000",
-        tickSpacing: Number(60),
-        hooks: contracts.RoyaltyPool.address,
-      },
-      {
-        zeroForOne: true,
-        amountSpecified: -parseEther(fromAmount), // TODO: assumes tokens are always 18 decimals
-        sqrtPriceLimitX96:
-          fromCurrency.toLowerCase() < toCurrency.toLowerCase() ? MIN_SQRT_PRICE_LIMIT : MAX_SQRT_PRICE_LIMIT, // unlimited impact
-      },
-      {
-        withdrawTokens: true,
-        settleUsingTransfer: true,
-        currencyAlreadySent: false,
-      },
-      // msg.sender
-      encodeAbiParameters([{ name: "x", type: "address" }], ["0xa0Ee7A142d267C1f36714E4a8F75612F20a79720"]),
-    ],
-  });
-
-  useEffect(() => {
-    if (swapIsSuccess && swapData) {
-      setTxHash(swapData.hash);
-    }
-  }, [swapIsSuccess, swapData]);
-
-  useEffect(() => {
-    if (isTxConfirmed && !swapIsError) {
-      setSwapSuccess(true);
-      setIsSwapping(false);
-    }
-  }, [isTxConfirmed, swapIsError]);
-
-  useEffect(() => {
-    if (swapIsError && swapTxError) {
-      setIsSwapping(false);
-      setSwapError(swapTxError.message);
-    }
-  }, [swapIsError, swapTxError]);
 
   // TODO: implement useEffect for after ZK proof published success (showZkPublishSuccess)
 
@@ -263,7 +265,7 @@ function SwapComponent() {
           </div>
         )}
 
-        {fromTokenIsApproved && !isTxConfirmed && (
+        {fromTokenIsApproved && (
           <>
             {!zkPublishingSuccess ? (
               !isEligibleForPremium ? (
@@ -279,7 +281,15 @@ function SwapComponent() {
                           setIsPublishingZkProof(true);
                         }
                       : () => {
+                          const input: UserInput<CircuitInputs> = {
+                            blockNumber: blockNumber!,
+                            userAddress: address!,
+                            hookAddress: contracts.RoyaltyPool.address,
+                            poolId: "0x000000000000000000000000Eaa455e4291742eC362Bc21a8C46E5F2b5ed4701",
+                            poolFee: poolFee,
+                          };
                           // TODO: handle generating ZK proof
+                          axiomCall(input);
                           setIsGeneratingZkProof(true);
                         }
                   }
@@ -292,7 +302,6 @@ function SwapComponent() {
 
             {showZKProofGenerated && <SuccessBox header="ZK Proof Generated" subText={""} />}
             {showZkPublishSuccess && <SuccessBox header="ZK Proof Published" subText={""} />}
-            {showSwapSuccess && <SuccessBox header="Swap Successful" subText={""} />}
 
             <button
               className="w-full py-3 rounded-2xl bg-[#FF73FF] text-[#FEFCFE] font-semibold text-lg focus:outline-none focus:ring-indigo-500 transition-all"
@@ -309,6 +318,8 @@ function SwapComponent() {
             >
               {isSwapping ? "Swapping..." : "Swap"}
             </button>
+
+            {showSwapSuccess && <SuccessBox header="Swap Successful" subText={""} />}
           </>
         )}
       </div>
