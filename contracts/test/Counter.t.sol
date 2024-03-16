@@ -21,6 +21,8 @@ contract CounterTest is Test, Deployers {
     using PoolIdLibrary for PoolKey;
     using CurrencyLibrary for Currency;
 
+    address constant AXIOM_V2_QUERY_ADDRESS = address(0x83c8c0B395850bA55c830451Cfaca4F2A667a983);
+
     RoyaltyHook royaltyHook;
     PoolId poolId;
 
@@ -35,9 +37,9 @@ contract CounterTest is Test, Deployers {
             address(this),
             flags,
             type(RoyaltyHook).creationCode,
-            abi.encode(address(manager), address(1), 0, bytes32(0))
+            abi.encode(address(manager), AXIOM_V2_QUERY_ADDRESS, uint64(block.chainid), bytes32(0))
         );
-        royaltyHook = new RoyaltyHook{salt: salt}(IPoolManager(address(manager)), address(1), 0, bytes32(0));
+        royaltyHook = new RoyaltyHook{salt: salt}(IPoolManager(address(manager)), AXIOM_V2_QUERY_ADDRESS, uint64(block.chainid), bytes32(0));
         require(address(royaltyHook) == hookAddress, "CounterTest: hook address mismatch");
 
         // Create the pool

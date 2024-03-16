@@ -26,6 +26,7 @@ import "forge-std/console.sol";
 /// @dev This script only works on an anvil RPC because v4 exceeds bytecode limits
 contract CounterScript is Script {
     address constant CREATE2_DEPLOYER = address(0x4e59b44847b379578588920cA78FbF26c0B4956C);
+    address constant AXIOM_V2_QUERY_ADDRESS = address(0x83c8c0B395850bA55c830451Cfaca4F2A667a983);
 
     function setUp() public {}
 
@@ -39,14 +40,14 @@ contract CounterScript is Script {
             address(this),
             flags,
             type(RoyaltyHook).creationCode,
-            abi.encode(address(manager), address(1), 0, bytes32(0))
+            abi.encode(address(manager), AXIOM_V2_QUERY_ADDRESS, uint64(block.chainid), bytes32(0))
         );
 
         // ----------------------------- //
         // Deploy the hook using CREATE2 //
         // ----------------------------- //
         // vm.broadcast();
-        RoyaltyHook royaltyHook = new RoyaltyHook{salt: salt}(IPoolManager(address(manager)), address(1), 0, bytes32(0));
+        RoyaltyHook royaltyHook = new RoyaltyHook{salt: salt}(IPoolManager(address(manager)), AXIOM_V2_QUERY_ADDRESS, uint64(block.chainid), bytes32(0));
         require(address(royaltyHook) == hookAddress, "CounterTest: hook address mismatch");
 
          // Additional helpers for interacting with the pool
