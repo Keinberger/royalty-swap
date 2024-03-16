@@ -17,7 +17,7 @@ import {HookMiner} from "./utils/HookMiner.sol";
 
 import {SwapFeeLibrary} from "v4-core/src/libraries/SwapFeeLibrary.sol";
 
-contract CounterTest is Test, Deployers {
+contract RoyaltyHookTest is Test, Deployers {
     using PoolIdLibrary for PoolKey;
     using CurrencyLibrary for Currency;
 
@@ -42,7 +42,7 @@ contract CounterTest is Test, Deployers {
         royaltyHook = new RoyaltyHook{salt: salt}(
             IPoolManager(address(manager)), AXIOM_V2_QUERY_ADDRESS, uint64(block.chainid), bytes32(0)
         );
-        require(address(royaltyHook) == hookAddress, "CounterTest: hook address mismatch");
+        require(address(royaltyHook) == hookAddress, "RoyaltyHook: hook address mismatch");
 
         // Create the pool
         key = PoolKey(currency0, currency1, SwapFeeLibrary.DYNAMIC_FEE_FLAG, 60, IHooks(address(royaltyHook)));
@@ -59,7 +59,7 @@ contract CounterTest is Test, Deployers {
         );
     }
 
-    function testCounterHooks() public {
+    function testRoyaltyHooks() public {
         // positions were created in setup()
         // Perform a test swap //
         bool zeroForOne = true;
@@ -78,26 +78,6 @@ contract CounterTest is Test, Deployers {
             key, IPoolManager.ModifyLiquidityParams(-60, 60, liquidityDelta), ZERO_BYTES
         );
     }
-
-    function testSwap() public {
-        // positions were created in setup()
-        // Perform a test swap //
-        bool zeroForOne = true;
-        int256 amountSpecified = -1e18; // negative number indicates exact input swap!
-        // BalanceDelta swapDelta = swap(key, zeroForOne, amountSpecified, abi.encode(address(this)));
-        key = PoolKey(currency0, currency1, SwapFeeLibrary.DYNAMIC_FEE_FLAG, 60, IHooks(address(royaltyHook)));
-        IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
-            zeroForOne: zeroForOne,
-            amountSpecified: amountSpecified,
-            sqrtPriceLimitX96: zeroForOne ? TickMath.MIN_SQRT_RATIO + 1 : TickMath.MAX_SQRT_RATIO - 1 // unlimited impact
-        });
-
-        // manager.lock("");
-        // manager.swap(key, params, abi.encode(address(this)));
-        // ------------------- //
-        // assertEq(int256(swapDelta.amount0()), amountSpecified);
-    }
-
     function test_swapFromRouter() public {
         IPoolManager.SwapParams memory params =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
