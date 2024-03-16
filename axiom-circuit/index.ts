@@ -1,0 +1,97 @@
+import {
+  add,
+  sub,
+  mul,
+  div,
+  checkLessThan,
+  addToCallback,
+  CircuitValue,
+  CircuitValue256,
+  constant,
+  getSolidityMapping,
+  getAccount,
+  checkEqual,
+} from "@axiom-crypto/client";
+
+// TODO: update these
+const volumeMappingSlot = 0;
+const oneMonthInBlocks = 7200 * 30;
+const volumeThreshold = 1000e18;
+
+
+// Schema for the inputs to the circuit.
+export interface CircuitInputs {
+  // Latest block number.
+  // TODO: The smart contract should verify this is a block number within an acceptable error margin of the latest mined block.
+  blockNumber: CircuitValue;
+  // The user to compute trading volume for.
+  userAddress: CircuitValue;
+  // The Uniswap V4 hook address.
+  hookAddress: CircuitValue;
+  // The Uniswap V4 pool address.
+  poolAddress: CircuitValue;
+  // The Uniswap V4 pool ID.
+  poolId: CircuitValue;
+  // The fee for the pool.
+  poolFee: CircuitValue;
+}
+
+// Default inputs to use (only for compiling the circuit).
+// TODO: update these.
+export const defaultInputs = {
+  blockNumber: 4000000,
+  userAddress: "0xEaa455e4291742eC362Bc21a8C46E5F2b5ed4701",
+  hookAddress: "0xEaa455e4291742eC362Bc21a8C46E5F2b5ed4701",
+  poolAddress: "0xEaa455e4291742eC362Bc21a8C46E5F2b5ed4701",
+  poolKey: "0x000000000000000000000000Eaa455e4291742eC362Bc21a8C46E5F2b5ed4701",
+  poolFee: 1000,
+};
+
+// The Axiom circuit
+export const circuit = async (inputs: CircuitInputs) => {
+  // Calculate historical block number for volume computation and future block number for deprecating the obtained fee rebate (if any).
+  const oneMonthBefore = sub(inputs.blockNumber.value(), oneMonthInBlocks);
+  const oneMonthAfter = add(inputs.blockNumber.value(), oneMonthInBlocks);
+
+  // Get historical volume one month before the current (given) block.
+  // TODO: drill down the mapping.
+  const volumeMappingBefore = getSolidityMapping(
+    oneMonthBefore,
+    inputs.hookAddress,
+    volumeMappingSlot
+  );
+  const volumeBefore = await volumeMappingBefore.nested([
+    inputs.poolId,
+    inputs.userAddress,
+  ]);
+
+  // Get volume at end block number.
+  const volumeMappingLatest = getSolidityMapping(
+    inputs.blockNumber,
+    inputs.hookAddress,
+    volumeMappingSlot
+  );
+  const volumeLatest = await volumeMappingLatest.nested([
+    inputs.poolId,
+    inputs.userAddress,
+  ]);
+
+  // Compute diff in volume between start and end blocks.
+  const volume = sub(volumeLatest.lo(), volumeBefore.lo());
+
+  let feeRebate = constant(0);
+  if (volume.value() > volumeThreshold) {
+    // If the volume is greater than the threshold, calculate the fee rebate.
+    feeRebate = div(inputs.poolFee.value(), constant(1.25));
+  }
+
+  // Values to expose to our contract callback as `axiomResults`.
+  // The ID of the pool that was processed
+  addToCallback(inputs.poolId);
+  // The user address that was processed
+  addToCallback(inputs.userAddress);
+  // The fee rebate to be given
+  addToCallback(feeRebate);
+  // The block when the fee rebate should be deprecated
+  addToCallback(oneMonthAfter);
+};
