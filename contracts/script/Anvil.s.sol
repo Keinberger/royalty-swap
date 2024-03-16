@@ -59,6 +59,8 @@ contract CounterScript is Script {
         vm.startBroadcast();
         testLifecycle(manager, address(royaltyHook), lpRouter, swapRouter);
         vm.stopBroadcast(); 
+
+        console.log("failing");
     }
 
     // -----------------------------------------------------------
@@ -117,9 +119,9 @@ contract CounterScript is Script {
         token0.approve(address(swapRouter), type(uint256).max);
         token1.approve(address(swapRouter), type(uint256).max);
 
+        console.log("approval", token0.allowance(address(msg.sender), address(swapRouter)));
         console.log("VAL", RoyaltyHook(hook).TESTVAL());
         
-
         // add full range liquidity to the pool
         lpRouter.modifyLiquidity(
             poolKey,
@@ -140,10 +142,7 @@ contract CounterScript is Script {
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
         swapRouter.swap(poolKey, params, testSettings, abi.encode(address(this)));
 
-        ///@dev delete this to get rid of stack too deep
-        console.log("address lp", token0.balanceOf(address(manager)));
-        console.log("address lp", token1.balanceOf(address(manager)));
-        
+        console.log('balance swapper', token0.balanceOf(address(msg.sender)));
         // console.log("address swap", address(swapRouter));
     }
 }
