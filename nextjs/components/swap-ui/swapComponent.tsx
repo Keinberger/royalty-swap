@@ -5,7 +5,7 @@ import SuccessBox from "../base/SuccessBox";
 import { NumericSwapInput } from "../base/numeric-swap-input";
 import { parseEther } from "viem";
 import { useAccount, useChainId, useContractWrite, useToken, useWaitForTransaction } from "wagmi";
-import contracts from "~~/config/contracts";
+import {contracts} from "~~/config/contracts";
 import { counterAddress, poolSwapTestAddress, useErc20Allowance, useErc20Approve } from "~~/generated/generated";
 import { TOKEN_ADDRESSES } from "~~/utils/config";
 import { BLANK_TOKEN, MAX_SQRT_PRICE_LIMIT, MAX_UINT, MIN_SQRT_PRICE_LIMIT, ZERO_ADDR } from "~~/utils/constants";
@@ -18,7 +18,7 @@ function SwapComponent() {
   const tokens = TOKEN_ADDRESSES.map(address => useToken({ address: address[chainId as keyof typeof address] }));
   console.log("🚀 ~ file: swapComponent.tsx:22 ~ SwapComponent ~ tokens:", tokens);
 
-  const swapRouterAddress = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9";
+  const swapRouterAddress = contracts.PoolSwapTest.address;// poolSwapTestAddress[chainId as keyof typeof poolSwapTestAddress];
 
   const [fromCurrency, setFromCurrency] = useState(BLANK_TOKEN.address);
   const [toCurrency, setToCurrency] = useState(BLANK_TOKEN.address);
@@ -136,7 +136,7 @@ function SwapComponent() {
         settleUsingTransfer: true,
         currencyAlreadySent: false,
       },
-      // msg.sender 
+      // msg.sender
       encodeAbiParameters(
         [
           { name: 'x', type: 'address' },
