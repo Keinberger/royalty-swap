@@ -1,13 +1,14 @@
 [profile.default]
-src = 'contracts/src'
-test = 'contracts/test'
-out = 'contracts/out'
-libs = ['contracts/lib']
-fs_permissions = [{ access = "read", path = "./contracts/out"}, { access = "write", path = "genesis.json"}]
-cancun = true
-
-# For Linux/WSL2 systems, please change to `contracts/lib/v4-core/bin/solc-static-linux`
-
-auto_detect_solc=true
+src = "contracts/src"
+test = "contracts/test"
+out = "contracts/out"
+libs = ["contracts/lib"]
+ffi = true
+fs_permissions = [
+    { access = "read", path = "./contracts/out"}, { access = "write", path = "genesis.json"},
+    { access = "read-write", path = ".forge-snapshots/"},
+    ]
+solc_version = "0.8.24"
+evm_version = "cancun"
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
