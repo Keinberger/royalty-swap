@@ -37,7 +37,7 @@ contract CounterScript is Script {
         // hook contracts must have specific flags encoded in the address
         uint160 flags = uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG);
         (address hookAddress, bytes32 salt) = HookMiner.find(
-            address(this),
+            address(0x4e59b44847b379578588920cA78FbF26c0B4956C),
             flags,
             type(RoyaltyHook).creationCode,
             abi.encode(address(manager), AXIOM_V2_QUERY_ADDRESS, uint64(block.chainid), bytes32(0))
@@ -46,7 +46,7 @@ contract CounterScript is Script {
         // ----------------------------- //
         // Deploy the hook using CREATE2 //
         // ----------------------------- //
-        // vm.broadcast();
+        vm.broadcast();
         RoyaltyHook royaltyHook = new RoyaltyHook{salt: salt}(IPoolManager(address(manager)), AXIOM_V2_QUERY_ADDRESS, uint64(block.chainid), bytes32(0));
         require(address(royaltyHook) == hookAddress, "CounterTest: hook address mismatch");
 
@@ -144,7 +144,7 @@ contract CounterScript is Script {
         });
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
-        // swapRouter.swap(poolKey, params, testSettings, abi.encode(msg.sender));
+        swapRouter.swap(poolKey, params, testSettings, abi.encode(msg.sender));
 
         console.log('balance swapper', token0.balanceOf(address(msg.sender)));
         console.log("address swap", address(swapRouter));
