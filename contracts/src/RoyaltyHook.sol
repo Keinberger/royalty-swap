@@ -21,6 +21,8 @@ contract RoyaltyHook is BaseHook, AxiomV2Client {
     /// @dev Source chain id for the Axiom V2 callback.
     uint64 immutable SOURCE_CHAIN_ID;
 
+    uint24 constant DEFAULT_FEE = 3000;
+
     /// @notice User trade volume for a given pool and user.
     /// @dev Always in token0 terms.
     mapping(PoolId poolId => mapping(address user => uint256 tradeVolume)) public userTradeVolume;
@@ -113,13 +115,13 @@ contract RoyaltyHook is BaseHook, AxiomV2Client {
     function getUserSpecificFee(PoolKey calldata key, address user) public view returns (uint24) {
         FeeRebate memory rebate = userSpecificFeeRebate[key.toId()][user];
         if (block.number < rebate.expiry) {
-            if (rebate.amount >= key.fee) {
+            if (rebate.amount >= DEFAULT_FEE) {
                 return 1; // Minimum non-zero fee
             } else {
-                return key.fee - rebate.amount;
+                return DEFAULT_FEE - rebate.amount;
             }
         } else {
-            return key.fee;
+            return DEFAULT_FEE;
         }
     }
 
@@ -147,7 +149,7 @@ contract RoyaltyHook is BaseHook, AxiomV2Client {
             userTradeVolume[key.toId()][msg.sender] += balanceToken0Before - balanceToken0After;
         }
 
-        poolManager.updateDynamicSwapFee(key, key.fee);
+        poolManager.updateDynamicSwapFee(key, DEFAULT_FEE);
         return BaseHook.afterSwap.selector;
     }
 
