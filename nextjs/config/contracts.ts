@@ -17,7 +17,7 @@ export const contracts = {
   RoyaltyPool: {
     address: "0x0300e9C16b3F11F7C0337a5C8674323a161e38D0",
     abi: PoolSwapTestAbi as Abi,
-  }
+  },
 };
 
 export default contracts;

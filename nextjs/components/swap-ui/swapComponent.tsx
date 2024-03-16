@@ -5,40 +5,41 @@ import ActivateFeeStatus from "../base/ActivateFeeStatus";
 import Fee from "../base/Fee";
 import SuccessBox from "../base/SuccessBox";
 import { NumericSwapInput } from "../base/numeric-swap-input";
-import { Axiom, UserInput } from "@axiom-crypto/client";
+// import { Axiom, UserInput } from "@axiom-crypto/client";
 import { parseEther } from "viem";
 import { encodeAbiParameters } from "viem";
 import { useAccount, useChainId, useContractWrite, useToken, useWaitForTransaction } from "wagmi";
 import { useBlockNumber } from "wagmi";
 import contracts from "~~/config/contracts";
-import { counterAddress, useErc20Allowance, useErc20Approve } from "~~/generated/generated";
+import { useErc20Allowance, useErc20Approve } from "~~/generated/generated";
 import { TOKEN_ADDRESSES } from "~~/utils/config";
-import { BLANK_TOKEN, MAX_SQRT_PRICE_LIMIT, MAX_UINT, MIN_SQRT_PRICE_LIMIT, ZERO_ADDR } from "~~/utils/constants";
+import { BLANK_TOKEN, MAX_SQRT_PRICE_LIMIT, MAX_UINT, MIN_SQRT_PRICE_LIMIT } from "~~/utils/constants";
 
-const axiomCall = async (input: UserInput<CircuitInputs>) => {
-  const axiom = new Axiom({
-    circuit: circuit,
-    compiledCircuit: compiledCircuit,
-    chainId: "31337",
-    provider: "http://localhost:8545",
-    privateKey: "2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6",
-    callback: {
-      target: "0x4A4e2D8f3fBb3525aD61db7Fc843c9bf097c362e",
-    },
-  });
-  await axiom.init();
-  const args = await axiom.prove(input);
-  console.log("ZK proof generated successfully.");
+// const axiomCall = async (input: UserInput<CircuitInputs>) => {
+//   const axiom = new Axiom({
+//     circuit: circuit,
+//     compiledCircuit: compiledCircuit,
+//     chainId: "31337",
+//     provider: "http://localhost:8545",
+//     privateKey: "2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6",
+//     callback: {
+//       target: "0x4A4e2D8f3fBb3525aD61db7Fc843c9bf097c362e",
+//     },
+//   });
+//   await axiom.init();
+//   const args = await axiom.prove(input);
+//   console.log("ZK proof generated successfully.");
 
-  console.log("Sending Query to Axiom on-chain...");
-  const receipt = await axiom.sendQuery();
-  console.log("Transaction receipt:", receipt);
-  console.log(`View your Query on Axiom Explorer: https://explorer.axiom.xyz/v2/sepolia/query/${args.queryId}`);
-};
+//   console.log("Sending Query to Axiom on-chain...");
+//   const receipt = await axiom.sendQuery();
+//   console.log("Transaction receipt:", receipt);
+//   console.log(`View your Query on Axiom Explorer: https://explorer.axiom.xyz/v2/sepolia/query/${args.queryId}`);
+// };
 
 function SwapComponent() {
   const { address } = useAccount();
   const chainId = useChainId();
+  const { data: blockNumber } = useBlockNumber();
 
   const tokens = TOKEN_ADDRESSES.map(address => useToken({ address: address[chainId as keyof typeof address] }));
   console.log("🚀 ~ file: swapComponent.tsx:22 ~ SwapComponent ~ tokens:", tokens);
@@ -51,10 +52,6 @@ function SwapComponent() {
 
   const [swapFee, setSwapFee] = useState(3000n);
   const [tickSpacing, setTickSpacing] = useState(60n);
-  const [hookData, setHookData] = useState<string>(""); // New state for custom hook data
-  const [hookAddress, setHookAddress] = useState<`0x${string}`>(
-    counterAddress[chainId as keyof typeof counterAddress] ?? ZERO_ADDR,
-  );
 
   //swap status
   const [isSwapping, setIsSwapping] = useState(false);
@@ -63,17 +60,19 @@ function SwapComponent() {
 
   // CUSTOM
   const [approveSuccess, setApproveSuccess] = useState(false);
+  const [isPublishingZkProof, setIsPublishingZkProof] = useState(false);
+  const [zkPublishingSuccess, setZkPublishSuccess] = useState(false);
 
   // TODO: delete once useEligibleForPremiumPlan is implemented
-  const [isEligibleForPremium, setIsEligibleForPremiumPlan] = useState(false);
+  const [isEligibleForPremium, setIsEligibleForPremiumPlan] = useState(true);
 
-  const [isActivatingPremium, setIsActivatingPremium] = useState(false);
-  const [isPremiumActivated, setIsPremiumActivated] = useState(true);
+  const [isGeneratingZkProof, setIsGeneratingZkProof] = useState(false);
+  const [isZkProofGenerated, setIsZkProofGenerated] = useState(false);
 
-  const [showPremiumActivated, setShowPremiumActivated] = useState(false);
+  const [showZkPublishSuccess, setShowZkPublishSuccess] = useState(false);
   const [showSwapSuccess, setShowSwapSuccess] = useState(false);
   const [showApproveSuccess, setShowApproveSuccess] = useState(false);
-  const { data: blockNumber } = useBlockNumber();
+  const [showZKProofGenerated, setShowZKProofGenerated] = useState(false);
 
   // const poolAddress = deployedContracts[chainId as keyof typeof deployedContracts][0].contracts.PoolSwapTest.address;
   // TODO: CUSTOM COMPONENTS TO BUILD
@@ -82,15 +81,15 @@ function SwapComponent() {
   // const generateZkProof = () => {};
 
   useEffect(() => {
-    if (isPremiumActivated) {
-      setShowPremiumActivated(true);
+    if (zkPublishingSuccess) {
+      setShowZkPublishSuccess(true);
       const timer = setTimeout(() => {
-        setShowPremiumActivated(false);
+        setShowZkPublishSuccess(false);
       }, 5000);
 
       return () => clearTimeout(timer);
     }
-  }, [isPremiumActivated]);
+  }, [zkPublishingSuccess]);
 
   useEffect(() => {
     if (approveSuccess) {
@@ -144,14 +143,14 @@ function SwapComponent() {
     functionName: "swap",
     args: [
       {
-        currency0: fromCurrency.toLowerCase() < toCurrency.toLowerCase() ? fromCurrency : toCurrency,
-        currency1: fromCurrency.toLowerCase() < toCurrency.toLowerCase() ? toCurrency : fromCurrency,
+        currency0: fromCurrency,
+        currency1: toCurrency,
         fee: Number(swapFee),
         tickSpacing: Number(tickSpacing),
-        hooks: hookAddress,
+        hooks: contracts.RoyaltyPool.address,
       },
       {
-        zeroForOne: fromCurrency.toLowerCase() < toCurrency.toLowerCase(),
+        zeroForOne: true,
         amountSpecified: parseEther(fromAmount), // TODO: assumes tokens are always 18 decimals
         sqrtPriceLimitX96:
           fromCurrency.toLowerCase() < toCurrency.toLowerCase() ? MIN_SQRT_PRICE_LIMIT : MAX_SQRT_PRICE_LIMIT, // unlimited impact
@@ -165,10 +164,6 @@ function SwapComponent() {
       encodeAbiParameters([{ name: "x", type: "address" }], ["0xa0Ee7A142d267C1f36714E4a8F75612F20a79720"]),
     ],
   });
-
-  useEffect(() => {
-    setHookAddress(counterAddress[chainId as keyof typeof counterAddress] ?? ZERO_ADDR);
-  }, [chainId]);
 
   useEffect(() => {
     if (swapIsSuccess && swapData) {
@@ -189,6 +184,8 @@ function SwapComponent() {
       setSwapError(swapTxError.message);
     }
   }, [swapIsError, swapTxError]);
+
+  // TODO: implement useEffect for after ZK proof published success (showZkPublishSuccess)
 
   const fromTokenIsApproved = fromTokenAllowance.data ? fromTokenAllowance.data > 0n : false;
   return (
@@ -268,43 +265,33 @@ function SwapComponent() {
 
         {fromTokenIsApproved && !isTxConfirmed && (
           <>
-            {!isPremiumActivated ? (
+            {!zkPublishingSuccess ? (
               !isEligibleForPremium ? (
-                <Fee
-                  fee={Number(swapFee)}
-                  symbol={tokens.find(token => token.data?.address === fromCurrency)?.data?.symbol ?? "N/A"}
-                  isPremium={false}
-                />
+                <Fee isPremium={false} />
               ) : (
                 <ActivateFeeStatus
-                  fee={Number(swapFee)}
-                  symbol={tokens.find(token => token.data?.address === fromCurrency)?.data?.symbol ?? "N/A"}
-                  loading={isActivatingPremium}
-                  onClick={() => {
-                    // TODO: implement premium plan activation here
-
-                    setIsActivatingPremium(true);
-                    setIsPremiumActivated(true);
-                    axiomCall({
-                      blockNumber: blockNumber,
-                      userAddress: address,
-                      hookAddress: contracts.RoyaltyPool.address,
-                      poolAddress: contracts.PoolSwapTest.address,
-                      poolId: "0x", // TODO: find this
-                      poolFee: 3000,
-                    });
-                  }}
+                  // TODO: replace "false" with loading from ZK proof publishing TX
+                  loading={isZkProofGenerated ? isPublishingZkProof : isGeneratingZkProof}
+                  onClick={
+                    isZkProofGenerated
+                      ? () => {
+                          // TODO: handle publishing ZK proof on-chain
+                          setIsPublishingZkProof(true);
+                        }
+                      : () => {
+                          // TODO: handle generating ZK proof
+                          setIsGeneratingZkProof(true);
+                        }
+                  }
+                  isOnPublishProofStep={isZkProofGenerated}
                 />
               )
             ) : (
-              <Fee
-                fee={Number(swapFee)}
-                symbol={tokens.find(token => token.data?.address === fromCurrency)?.data?.symbol ?? "N/A"}
-                isPremium={true}
-              />
+              <Fee isPremium={true} />
             )}
 
-            {showPremiumActivated && <SuccessBox header="Premium Plan Activated" subText={""} />}
+            {showZKProofGenerated && <SuccessBox header="ZK Proof Generated" subText={""} />}
+            {showZkPublishSuccess && <SuccessBox header="ZK Proof Published" subText={""} />}
             {showSwapSuccess && <SuccessBox header="Swap Successful" subText={""} />}
 
             <button

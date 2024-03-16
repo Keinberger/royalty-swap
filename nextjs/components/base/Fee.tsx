@@ -1,12 +1,4 @@
-export default function Fee({
-  fee,
-  symbol,
-  isPremium,
-}: {
-  fee: number;
-  symbol: string;
-  isPremium: boolean;
-}): JSX.Element {
+export default function Fee({ isPremium }: { isPremium: boolean }): JSX.Element {
   return (
     <div className="flex flex-col rounded-2xl bg-[#AAE7DC] p-1 gap-4">
       <div className="rounded-2xl bg-white py-3 px-4 flex flex-row justify-between text-sm font-semibold tracking-normal">
@@ -24,7 +16,7 @@ export default function Fee({
       {!isPremium && (
         <div className="px-4 mb-4 flex justify-center">
           <span className="text-black text-normal font-semibold">
-            You may enjoy a fee reduction next time by activating the VIP status.
+            You may enjoy a fee reduction next time using the VIP status. Become a frequent user and get reduced fees.
           </span>
         </div>
       )}
