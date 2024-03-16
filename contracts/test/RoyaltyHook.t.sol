@@ -88,4 +88,15 @@ contract RoyaltyHookTest is Test, Deployers {
 
         swapRouter.swap(key, params, testSettings, abi.encode(address(msg.sender)));
     }
+
+    function test_swapFromRouterTestUpdate() public {
+        IPoolManager.SwapParams memory params =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
+
+        royaltyHook.testUpdateFee(100, 0xa0Ee7A142d267C1f36714E4a8F75612F20a79720, )
+
+        swapRouter.swap(key, params, testSettings, abi.encode(address(msg.sender)));
+    }
 }

@@ -110,7 +110,6 @@ contract RoyaltyHook is BaseHook, AxiomV2Client {
     }
 
     /// #endregion Axiom V2 Callbacks
-
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
         return Hooks.Permissions({
             beforeInitialize: false,
@@ -151,6 +150,8 @@ contract RoyaltyHook is BaseHook, AxiomV2Client {
         /// @dev The following line is a blatant security vulnerability. Please don't use it in production.
         balanceToken0Before = key.currency0.balanceOfSelf();
         poolManager.updateDynamicSwapFee(key, getUserSpecificFee(key, msgSender));
+
+        // bytes32 _key;= key.toId();
 
         console.log("ending before swap");
         return BaseHook.beforeSwap.selector;
