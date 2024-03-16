@@ -4,12 +4,12 @@ import Fee from "../base/Fee";
 import SuccessBox from "../base/SuccessBox";
 import { NumericSwapInput } from "../base/numeric-swap-input";
 import { parseEther } from "viem";
+import { encodeAbiParameters } from "viem";
 import { useAccount, useChainId, useContractWrite, useToken, useWaitForTransaction } from "wagmi";
-import {contracts} from "~~/config/contracts";
-import { counterAddress, poolSwapTestAddress, useErc20Allowance, useErc20Approve } from "~~/generated/generated";
+import contracts from "~~/config/contracts";
+import { counterAddress, useErc20Allowance, useErc20Approve } from "~~/generated/generated";
 import { TOKEN_ADDRESSES } from "~~/utils/config";
 import { BLANK_TOKEN, MAX_SQRT_PRICE_LIMIT, MAX_UINT, MIN_SQRT_PRICE_LIMIT, ZERO_ADDR } from "~~/utils/constants";
-import { encodeAbiParameters } from 'viem'
 
 function SwapComponent() {
   const { address } = useAccount();
@@ -18,7 +18,7 @@ function SwapComponent() {
   const tokens = TOKEN_ADDRESSES.map(address => useToken({ address: address[chainId as keyof typeof address] }));
   console.log("🚀 ~ file: swapComponent.tsx:22 ~ SwapComponent ~ tokens:", tokens);
 
-  const swapRouterAddress = contracts.PoolSwapTest.address;// poolSwapTestAddress[chainId as keyof typeof poolSwapTestAddress];
+  const swapRouterAddress = contracts.PoolSwapTest.address; // poolSwapTestAddress[chainId as keyof typeof poolSwapTestAddress];
 
   const [fromCurrency, setFromCurrency] = useState(BLANK_TOKEN.address);
   const [toCurrency, setToCurrency] = useState(BLANK_TOKEN.address);
@@ -40,10 +40,10 @@ function SwapComponent() {
   const [approveSuccess, setApproveSuccess] = useState(false);
 
   // TODO: delete once useEligibleForPremiumPlan is implemented
-  const [isEligibleForPremium, setIsEligibleForPremiumPlan] = useState(true);
+  const [isEligibleForPremium, setIsEligibleForPremiumPlan] = useState(false);
 
   const [isActivatingPremium, setIsActivatingPremium] = useState(false);
-  const [isPremiumActivated, setIsPremiumActivated] = useState(false);
+  const [isPremiumActivated, setIsPremiumActivated] = useState(true);
 
   const [showPremiumActivated, setShowPremiumActivated] = useState(false);
   const [showSwapSuccess, setShowSwapSuccess] = useState(false);
@@ -58,7 +58,6 @@ function SwapComponent() {
   useEffect(() => {
     if (isPremiumActivated) {
       setShowPremiumActivated(true);
-
       const timer = setTimeout(() => {
         setShowPremiumActivated(false);
       }, 5000);
@@ -69,6 +68,7 @@ function SwapComponent() {
 
   useEffect(() => {
     if (approveSuccess) {
+      setShowApproveSuccess(true);
       const timer = setTimeout(() => {
         setShowApproveSuccess(false);
       }, 5000);
@@ -80,7 +80,6 @@ function SwapComponent() {
   useEffect(() => {
     if (swapSuccess) {
       setShowSwapSuccess(true);
-
       const timer = setTimeout(() => {
         setShowSwapSuccess(false);
       }, 5000);
@@ -137,12 +136,7 @@ function SwapComponent() {
         currencyAlreadySent: false,
       },
       // msg.sender
-      encodeAbiParameters(
-        [
-          { name: 'hookData', type: 'address' },
-        ],
-        ["0xa0Ee7A142d267C1f36714E4a8F75612F20a79720"]
-      ),
+      encodeAbiParameters([{ name: "x", type: "address" }], ["0xa0Ee7A142d267C1f36714E4a8F75612F20a79720"]),
     ],
   });
 
@@ -170,6 +164,7 @@ function SwapComponent() {
     }
   }, [swapIsError, swapTxError]);
 
+  const fromTokenIsApproved = fromTokenAllowance.data ? fromTokenAllowance.data > 0n : false;
   return (
     <div className="card shadow-2xl pt-6 pb-2 px-3 bg-white rounded-2xl border-2  min-w-[34rem] max-w-xl transition-shadow">
       <div className="mb-2 mx-4">
@@ -214,13 +209,13 @@ function SwapComponent() {
           tokenOnChange={e => setToCurrency(e.target.value)}
         />
 
-        {true && (
+        {fromCurrency !== BLANK_TOKEN.address && fromTokenAllowance.data === 0n && (
           <button
             className="w-full py-3 rounded-2xl bg-[#FF73FF] text-[#FEFCFE] font-semibold text-lg focus:outline-none focus:ring-indigo-500 transition-all"
             onClick={() => {
               tokenApprove.writeAsync().then(() => {
-                fromTokenAllowance.refetch();
                 setApproveSuccess(true);
+                fromTokenAllowance.refetch();
               });
             }}
           >
@@ -245,13 +240,14 @@ function SwapComponent() {
           </div>
         )}
 
-        {true /* approveSuccess && !isTxConfirmed */ && (
+        {fromTokenIsApproved && !isTxConfirmed && (
           <>
-            {!isPremiumActivated &&
-              (!isEligibleForPremium ? (
+            {!isPremiumActivated ? (
+              !isEligibleForPremium ? (
                 <Fee
                   fee={Number(swapFee)}
                   symbol={tokens.find(token => token.data?.address === fromCurrency)?.data?.symbol ?? "N/A"}
+                  isPremium={false}
                 />
               ) : (
                 <ActivateFeeStatus
@@ -260,11 +256,19 @@ function SwapComponent() {
                   loading={isActivatingPremium}
                   onClick={() => {
                     // TODO: implement premium plan activation here
+
                     setIsActivatingPremium(true);
                     setIsPremiumActivated(true);
                   }}
                 />
-              ))}
+              )
+            ) : (
+              <Fee
+                fee={Number(swapFee)}
+                symbol={tokens.find(token => token.data?.address === fromCurrency)?.data?.symbol ?? "N/A"}
+                isPremium={true}
+              />
+            )}
 
             {showPremiumActivated && <SuccessBox header="Premium Plan Activated" subText={""} />}
             {showSwapSuccess && <SuccessBox header="Swap Successful" subText={""} />}
