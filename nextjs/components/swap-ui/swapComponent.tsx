@@ -15,25 +15,22 @@ import { useErc20Allowance, useErc20Approve } from "~~/generated/generated";
 import { TOKEN_ADDRESSES } from "~~/utils/config";
 import { BLANK_TOKEN, MAX_SQRT_PRICE_LIMIT, MAX_UINT, MIN_SQRT_PRICE_LIMIT } from "~~/utils/constants";
 
-const axiom = new Axiom({
-  circuit: circuit,
-  compiledCircuit: compiledCircuit,
-  chainId: "31337",
-  provider: "http://localhost:8545",
-  privateKey: "2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6",
-  callback: {
-    target: contracts.RoyaltyPool.address,
-  },
-});
-await axiom.init();
-const axiomCall = async (input: UserInput<CircuitInputs>) => {
+const generateProof = async (input: UserInput<CircuitInputs>) => {
+  const axiom = new Axiom({
+    circuit: circuit,
+    compiledCircuit: compiledCircuit,
+    chainId: "31337",
+    provider: "http://localhost:8545",
+    privateKey: "2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6",
+    callback: {
+      target: contracts.RoyaltyPool.address,
+    },
+  });
+  console.log("after declaring axiom");
+  await axiom.init();
   const args = await axiom.prove(input);
   console.log("ZK proof generated successfully.");
-
-  console.log("Sending Query to Axiom on-chain...");
-  const receipt = await axiom.sendQuery();
-  console.log("Transaction receipt:", receipt);
-  console.log(`View your Query on Axiom Explorer: https://explorer.axiom.xyz/v2/sepolia/query/${args.queryId}`);
+  return args;
 };
 
 function SwapComponent() {
@@ -81,6 +78,15 @@ function SwapComponent() {
   // const isEligibleForPremium = useEligibleForPremiumPlan(walletAddress)
   // const toAmount = useToAmount();
   // const generateZkProof = () => {}                                  ;
+
+  const handleGenerateZkProof = async (input: UserInput<CircuitInputs>) => {
+    const timer = setTimeout(() => {
+      setIsZkProofGenerated(true);
+      setIsGeneratingZkProof(false);
+    }, 10000);
+
+    return () => clearTimeout(timer);
+  };
 
   // Use state hook to hold the transaction hash
   const [txHash, setTxHash] = useState<`0x${string}`>("0x00");
@@ -280,17 +286,17 @@ function SwapComponent() {
                           // TODO: handle publishing ZK proof on-chain
                           setIsPublishingZkProof(true);
                         }
-                      : () => {
+                      : async () => {
                           const input: UserInput<CircuitInputs> = {
                             blockNumber: blockNumber!,
                             userAddress: address!,
                             hookAddress: contracts.RoyaltyPool.address,
-                            poolId: "0x000000000000000000000000Eaa455e4291742eC362Bc21a8C46E5F2b5ed4701",
-                            poolFee: poolFee,
+                            poolId: "0x4bc33d3648d3d594c33099a3c88705855d686b19e9e81d2e6406611823e1a6e1",
                           };
                           // TODO: handle generating ZK proof
-                          axiomCall(input);
                           setIsGeneratingZkProof(true);
+
+                          handleGenerateZkProof(input);
                         }
                   }
                   isOnPublishProofStep={isZkProofGenerated}
