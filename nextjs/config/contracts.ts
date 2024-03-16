@@ -1,6 +1,5 @@
 import { ERC20Abi, PoolSwapTestAbi } from "./abis";
 import { Abi } from "viem";
-import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 
 export const contracts = {
   Token0: {
