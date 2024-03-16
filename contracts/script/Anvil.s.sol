@@ -148,6 +148,7 @@ contract CounterScript is Script {
 
         console.log('balance swapper', token0.balanceOf(address(msg.sender)));
         console.log("address swap", address(swapRouter));
+        console.log("address hook", address(hook));
 
         console.log("token0", address(token0));
         console.log('token1', address(token1));
