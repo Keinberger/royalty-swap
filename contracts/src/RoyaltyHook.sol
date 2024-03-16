@@ -11,11 +11,10 @@ import {BalanceDelta} from "v4-core/src/types/BalanceDelta.sol";
 import {AxiomV2Client} from "axiom-crypto/v2-periphery/client/AxiomV2Client.sol";
 import {CurrencyLibrary, Currency} from "v4-core/src/types/Currency.sol";
 
-
 import "forge-std/console.sol";
 
 contract RoyaltyHook is BaseHook, AxiomV2Client {
-    uint256 constant public TESTVAL = 3000;
+    uint256 public constant TESTVAL = 3000;
 
     using PoolIdLibrary for PoolKey;
     using CurrencyLibrary for Currency;
@@ -149,7 +148,7 @@ contract RoyaltyHook is BaseHook, AxiomV2Client {
         balanceToken0Before = key.currency0.balanceOfSelf();
         poolManager.updateDynamicSwapFee(key, getUserSpecificFee(key, msgSender));
 
-        console.log('ending before swap');
+        console.log("ending before swap");
         return BaseHook.beforeSwap.selector;
     }
 
@@ -169,7 +168,6 @@ contract RoyaltyHook is BaseHook, AxiomV2Client {
         poolManager.updateDynamicSwapFee(key, DEFAULT_FEE);
 
         console.log("ending afterswap");
-
 
         balanceToken0Before = 0;
         msgSender = address(0);
