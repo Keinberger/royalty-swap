@@ -4,6 +4,7 @@ import { watchContractEvent } from "@wagmi/core";
 import type { NextPage } from "next";
 import { useLocalStorage } from "usehooks-ts";
 import { useChainId } from "wagmi";
+import { Header } from "~~/components/Header";
 import { MetaHeader } from "~~/components/MetaHeader";
 import { ContractUI } from "~~/components/scaffold-eth";
 import { poolManagerABI, poolManagerAddress } from "~~/generated/generated";
@@ -58,6 +59,7 @@ const Debug: NextPage = () => {
 
   return (
     <>
+      <Header />
       <MetaHeader
         title="Debug Contracts | Scaffold-ETH 2"
         description="Debug your deployed 🏗 Scaffold-ETH 2 contracts in an easy way"

@@ -5,6 +5,7 @@ import { button as buttonStyles } from "@nextui-org/theme";
 import { motion } from "framer-motion";
 import type { NextPage } from "next";
 import { FaGithub } from "react-icons/fa";
+import { Header } from "~~/components/Header";
 import { MetaHeader } from "~~/components/MetaHeader";
 import { subtitle, title } from "~~/components/primitives";
 
@@ -16,6 +17,7 @@ const variants = {
 const Home: NextPage = () => {
   return (
     <>
+      <Header />
       <MetaHeader />
       <div className="flex items-center flex-col flex-grow pt-10">
         <div className="px-5">

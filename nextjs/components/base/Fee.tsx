@@ -12,7 +12,7 @@ export default function Fee({ fee, symbol }: { fee: number; symbol: string }): J
         </div>
       </div>
       <div className="px-4 mb-4 flex justify-center">
-        <span className="text-black text-sm font-medium">
+        <span className="text-black text-normal font-semibold">
           You may enjoy a fee reduction next time by activating the VIP status.
         </span>
       </div>

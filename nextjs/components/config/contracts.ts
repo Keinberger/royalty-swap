@@ -1,7 +1,7 @@
-import { counterABI, hookMinerABI, poolManagerABI, poolModifyLiquidityTestABI, poolSwapTestABI } from "./generated";
+import { counterABI, hookMinerABI, poolManagerABI, poolModifyLiquidityTestABI, poolSwapTestABI } from "./abis";
 import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 
-export const deployedContracts: GenericContractsDeclaration = {
+export const contracts: GenericContractsDeclaration = {
   31337: [
     {
       name: "Anvil",
@@ -32,4 +32,4 @@ export const deployedContracts: GenericContractsDeclaration = {
   ],
 };
 
-export default deployedContracts;
+export default contracts;

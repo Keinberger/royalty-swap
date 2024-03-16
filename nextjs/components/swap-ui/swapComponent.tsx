@@ -2,9 +2,11 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import ActivateFeeStatus from "../base/ActivateFeeStatus";
 import Fee from "../base/Fee";
+import SuccessBox from "../base/SuccessBox";
 import { NumericSwapInput } from "../base/numeric-swap-input";
 import { parseEther } from "viem";
 import { useAccount, useChainId, useToken, useWaitForTransaction } from "wagmi";
+import deployedContracts from "~~/generated/deployedContracts";
 import {
   counterAddress,
   poolSwapTestAddress,
@@ -39,6 +41,59 @@ function SwapComponent() {
   const [isSwapping, setIsSwapping] = useState(false);
   const [swapError, setSwapError] = useState("");
   const [swapSuccess, setSwapSuccess] = useState(false);
+
+  // CUSTOM
+  const [approveSuccess, setApproveSuccess] = useState(false);
+
+  // TODO: delete once useEligibleForPremiumPlan is implemented
+  const [isEligibleForPremium, setIsEligibleForPremiumPlan] = useState(false);
+
+  const [isActivatingPremium, setIsActivatingPremium] = useState(false);
+  const [isPremiumActivated, setIsPremiumActivated] = useState(false);
+
+  const [showPremiumActivated, setShowPremiumActivated] = useState(false);
+  const [showSwapSuccess, setShowSwapSuccess] = useState(false);
+  const [showApproveSuccess, setShowApproveSuccess] = useState(false);
+
+  // const poolAddress = deployedContracts[chainId as keyof typeof deployedContracts][0].contracts.PoolSwapTest.address;
+  // TODO: CUSTOM COMPONENTS TO BUILD
+  // const isEligibleForPremium = useEligibleForPremiumPlan(walletAddress)
+  // const toAmount = useToAmount();
+  // const generateZkProof = () => {};
+
+  useEffect(() => {
+    if (isPremiumActivated) {
+      setShowPremiumActivated(true);
+
+      const timer = setTimeout(() => {
+        setShowPremiumActivated(false);
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isPremiumActivated]);
+
+  useEffect(() => {
+    if (approveSuccess) {
+      const timer = setTimeout(() => {
+        setShowApproveSuccess(false);
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [approveSuccess]);
+
+  useEffect(() => {
+    if (swapSuccess) {
+      setShowSwapSuccess(true);
+
+      const timer = setTimeout(() => {
+        setShowSwapSuccess(false);
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [swapSuccess]);
 
   // Use state hook to hold the transaction hash
   const [txHash, setTxHash] = useState<`0x${string}`>("0x00");
@@ -162,93 +217,73 @@ function SwapComponent() {
 
         {fromCurrency !== BLANK_TOKEN.address && fromTokenAllowance.data === 0n && (
           <button
-            className="btn btn-primary w-full hover:bg-indigo-600 hover:shadow-lg active:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 transition-all mt-4"
-            onClick={() => tokenApprove.writeAsync().then(() => fromTokenAllowance.refetch())}
+            className="w-full py-3 rounded-2xl bg-[#FF73FF] text-[#FEFCFE] font-semibold text-lg focus:outline-none focus:ring-indigo-500 transition-all"
+            onClick={() => {
+              tokenApprove.writeAsync().then(() => {
+                fromTokenAllowance.refetch();
+                setApproveSuccess(true);
+              });
+            }}
           >
             Approve {tokens.find(token => token.data?.address === fromCurrency)?.data?.symbol}
           </button>
         )}
 
-        {/* SHow approved if allowance > 0 */}
-        {fromCurrency !== BLANK_TOKEN.address && fromTokenAllowance.data! > 0n && (
-          <div className="flex justify-between items-center p-3 bg-green-100 rounded-full border border-green-200 mt-10">
-            <div className="flex items-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6 text-green-500 mr-2"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span className="text-md font-semibold text-green-600">Approved</span>
-            </div>
-            <div className="flex items-center">
-              <span className="text-md font-semibold text-green-600">
-                {tokens.find(token => token.data?.address === fromCurrency)?.data?.symbol}
-              </span>
-            </div>
-          </div>
+        {showApproveSuccess && (
+          <SuccessBox
+            header="Approved"
+            subText={tokens.find(token => token.data?.address === fromCurrency)?.data?.symbol || ""}
+          />
         )}
 
-        {/* <Fee
-          fee={Number(swapFee)}
-          symbol={tokens.find(token => token.data?.address === fromCurrency)?.data?.symbol ?? "N/A"}
-        /> */}
-
-        <ActivateFeeStatus
-          fee={Number(swapFee)}
-          symbol={tokens.find(token => token.data?.address === fromCurrency)?.data?.symbol ?? "N/A"}
-        />
-
-        <div className="mt-4">
-          {isSwapping && !isTxConfirmed && (
-            <div style={{ fontFamily: "monospace" }} className="alert alert-info overflow-auto">
-              Swap initiated. Waiting for confirmation...
-            </div>
-          )}
-          {swapError && (
+        {swapError && (
+          <div className="mt-4">
             <div style={{ fontFamily: "monospace" }} className="alert alert-error overflow-auto">
               <div>
                 <label>Error: {swapError}</label>
               </div>
             </div>
-          )}
-          {isTxConfirmed && (
-            <div style={{ fontFamily: "monospace" }} className="alert alert-success overflow-auto">
-              <div>
-                <label>Swap successful! 🎉</label>
-                <pre>Transaction Hash: {txHash}</pre>
-                <span
-                  className="font-mono 
-                  text-sm 
-                  text-blue-600 
-                  hover:underline 
-                  cursor-pointer 
-                  transition-colors
-                "
-                >
-                  {/* View Swap events take you to debug page */}
-                  <Link href={`/debug`}>View Swap events</Link>
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        <button
-          className="w-full py-3 rounded-2xl bg-[#FF73FF] text-[#FEFCFE] font-semibold text-lg focus:outline-none focus:ring-indigo-500 transition-all"
-          onClick={handleSwap}
-          disabled={
-            isSwapping ||
-            fromCurrency === BLANK_TOKEN.address ||
-            toCurrency === BLANK_TOKEN.address ||
-            fromAmount === ""
-          }
-        >
-          {isSwapping ? "Swapping..." : "Swap"}
-        </button>
+        {approveSuccess && !isTxConfirmed && (
+          <>
+            {!isPremiumActivated &&
+              (!isEligibleForPremium ? (
+                <Fee
+                  fee={Number(swapFee)}
+                  symbol={tokens.find(token => token.data?.address === fromCurrency)?.data?.symbol ?? "N/A"}
+                />
+              ) : (
+                <ActivateFeeStatus
+                  fee={Number(swapFee)}
+                  symbol={tokens.find(token => token.data?.address === fromCurrency)?.data?.symbol ?? "N/A"}
+                  loading={isActivatingPremium}
+                  onClick={() => {
+                    // TODO: implement premium plan activation here
+                    setIsActivatingPremium(true);
+                    setIsPremiumActivated(true);
+                  }}
+                />
+              ))}
+
+            {showPremiumActivated && <SuccessBox header="Premium Plan Activated" subText={""} />}
+            {showSwapSuccess && <SuccessBox header="Swap Successful" subText={""} />}
+
+            <button
+              className="w-full py-3 rounded-2xl bg-[#FF73FF] text-[#FEFCFE] font-semibold text-lg focus:outline-none focus:ring-indigo-500 transition-all"
+              onClick={handleSwap}
+              disabled={
+                isSwapping ||
+                fromCurrency === BLANK_TOKEN.address ||
+                toCurrency === BLANK_TOKEN.address ||
+                fromAmount === ""
+              }
+            >
+              {isSwapping ? "Swapping..." : "Swap"}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
