@@ -105,6 +105,9 @@ contract CounterScript is Script {
         token0.mint(msg.sender, 100_000 ether);
         token1.mint(msg.sender, 100_000 ether);
 
+        token0.mint(0xa0Ee7A142d267C1f36714E4a8F75612F20a79720, 100_000 ether);
+        token1.mint(0xa0Ee7A142d267C1f36714E4a8F75612F20a79720, 100_000 ether);
+
         bytes memory ZERO_BYTES = new bytes(0);
 
         // initialize the pool
@@ -140,7 +143,7 @@ contract CounterScript is Script {
         });
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
-        swapRouter.swap(poolKey, params, testSettings, abi.encode(address(this)));
+        swapRouter.swap(poolKey, params, testSettings, abi.encode(msg.sender));
 
         console.log('balance swapper', token0.balanceOf(address(msg.sender)));
         // console.log("address swap", address(swapRouter));
