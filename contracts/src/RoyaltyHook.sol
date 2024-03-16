@@ -9,15 +9,25 @@ import {PoolKey} from "v4-core/src/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
 import {BalanceDelta} from "v4-core/src/types/BalanceDelta.sol";
 import {AxiomV2Client} from "axiom-crypto/v2-periphery/client/AxiomV2Client.sol";
+import {CurrencyLibrary, Currency} from "v4-core/src/types/Currency.sol";
 
 contract RoyaltyHook is BaseHook, AxiomV2Client {
     using PoolIdLibrary for PoolKey;
+    using CurrencyLibrary for Currency;
 
     /// @dev Axiom V2 Query Schema.
     bytes32 immutable QUERY_SCHEMA;
 
     /// @dev Source chain id for the Axiom V2 callback.
     uint64 immutable SOURCE_CHAIN_ID;
+
+    /// @notice User trade volume for a given pool and user.
+    /// @dev Always in token0 terms.
+    mapping(PoolId poolId => mapping(address user => uint256 tradeVolume)) public userTradeVolume;
+
+    /// @dev Used internally to store the pool balance of token0 before a swap.
+    /// TODO: Should be replaced with transient storage in the future.
+    uint256 internal balanceToken0Before;
 
     struct FeeRebate {
         uint24 amount;
@@ -120,6 +130,7 @@ contract RoyaltyHook is BaseHook, AxiomV2Client {
     {
         address msgSender = abi.decode(data, (address));
         /// @dev The following line is a blatant security vulnerability. Please don't use it in production.
+        balanceToken0Before = key.currency0.balanceOfSelf();
         poolManager.updateDynamicSwapFee(key, getUserSpecificFee(key, msgSender));
         return BaseHook.beforeSwap.selector;
     }
@@ -129,6 +140,13 @@ contract RoyaltyHook is BaseHook, AxiomV2Client {
         override
         returns (bytes4)
     {
+        uint256 balanceToken0After = key.currency0.balanceOfSelf();
+        if (balanceToken0After >= balanceToken0Before) {
+            userTradeVolume[key.toId()][msg.sender] += balanceToken0After - balanceToken0Before;
+        } else {
+            userTradeVolume[key.toId()][msg.sender] += balanceToken0Before - balanceToken0After;
+        }
+
         poolManager.updateDynamicSwapFee(key, key.fee);
         return BaseHook.afterSwap.selector;
     }
