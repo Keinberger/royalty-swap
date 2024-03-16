@@ -18,7 +18,6 @@ const volumeMappingSlot = 0;
 const oneMonthInBlocks = 7200 * 30;
 const volumeThreshold = 1000e18;
 
-
 // Schema for the inputs to the circuit.
 export interface CircuitInputs {
   // Latest block number.
@@ -43,7 +42,7 @@ export const defaultInputs = {
   userAddress: "0xEaa455e4291742eC362Bc21a8C46E5F2b5ed4701",
   hookAddress: "0xEaa455e4291742eC362Bc21a8C46E5F2b5ed4701",
   poolAddress: "0xEaa455e4291742eC362Bc21a8C46E5F2b5ed4701",
-  poolKey: "0x000000000000000000000000Eaa455e4291742eC362Bc21a8C46E5F2b5ed4701",
+  poolId: "0x000000000000000000000000Eaa455e4291742eC362Bc21a8C46E5F2b5ed4701",
   poolFee: 1000,
 };
 
