@@ -36,6 +36,10 @@ contract RoyaltyHook is BaseHook, AxiomV2Client {
     /// TODO: Should be replaced with transient storage in the future.
     uint256 internal balanceToken0Before;
 
+    /// @dev Used internally to store the address of the message sender.
+    /// TODO: Should be replaced with transient storage in the future.
+    address internal msgSender;
+
     struct FeeRebate {
         uint24 amount;
         uint232 expiry;
@@ -136,7 +140,7 @@ contract RoyaltyHook is BaseHook, AxiomV2Client {
         returns (bytes4)
     {
         console.log("in before swap");
-        address msgSender = abi.decode(data, (address));
+        msgSender = abi.decode(data, (address));
         /// @dev The following line is a blatant security vulnerability. Please don't use it in production.
         balanceToken0Before = key.currency0.balanceOfSelf();
         poolManager.updateDynamicSwapFee(key, getUserSpecificFee(key, msgSender));
@@ -153,14 +157,18 @@ contract RoyaltyHook is BaseHook, AxiomV2Client {
         console.log("in after swap");
         uint256 balanceToken0After = key.currency0.balanceOfSelf();
         if (balanceToken0After >= balanceToken0Before) {
-            userTradeVolume[key.toId()][msg.sender] += balanceToken0After - balanceToken0Before;
+            userTradeVolume[key.toId()][msgSender] += balanceToken0After - balanceToken0Before;
         } else {
-            userTradeVolume[key.toId()][msg.sender] += balanceToken0Before - balanceToken0After;
+            userTradeVolume[key.toId()][msgSender] += balanceToken0Before - balanceToken0After;
         }
 
         poolManager.updateDynamicSwapFee(key, DEFAULT_FEE);
 
         console.log("ending afterswap");
+
+
+        balanceToken0Before = 0;
+        msgSender = address(0);
 
         return BaseHook.afterSwap.selector;
     }
