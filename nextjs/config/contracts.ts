@@ -7,7 +7,7 @@ export const contracts = {
     abi: ERC20Abi as Abi,
   },
   Token1: {
-    address: "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+    address: "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
     abi: ERC20Abi as Abi,
   },
   PoolSwapTest: {
