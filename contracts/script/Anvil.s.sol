@@ -136,7 +136,6 @@ contract CounterScript is Script {
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
         swapRouter.swap(poolKey, params, testSettings, ZERO_BYTES);
 
-
         console.log("address swap", address(swapRouter));
     }
 }

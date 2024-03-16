@@ -10,7 +10,7 @@ import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
 import {BalanceDelta} from "v4-core/src/types/BalanceDelta.sol";
 import {AxiomV2Client} from "axiom-crypto/v2-periphery/client/AxiomV2Client.sol";
 
-contract RoyaltyHook is BaseHook, AxiomV2Client {
+contract Counter is BaseHook, AxiomV2Client {
     using PoolIdLibrary for PoolKey;
 
     /// @dev Axiom V2 Query Schema.
