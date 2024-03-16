@@ -177,3 +177,17 @@ To learn more about [Next.js](https://nextjs.org), [Foundry](https://book.getfou
 - [@wagmi/cli Documentation](https://wagmi.sh/cli) – learn more about the wagmi CLI.
 - [Next.js Documentation](https://nextjs.org/docs) learn about Next.js features and API.
 - [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+
+## Deploying 
+
+```
+anvil --hardfork cancun
+```
+
+```
+forge script script/Anvil.s.sol \
+    --rpc-url http://localhost:8545 \
+    --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+    --broadcast
+```
