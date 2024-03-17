@@ -57,6 +57,10 @@ function SwapComponent() {
   const [swapError, setSwapError] = useState("");
   const [swapSuccess, setSwapSuccess] = useState(false);
 
+  // test update swap fee
+  const [testUpdateSwapFeeError, setTestUpdateSwapFeeError] = useState("");
+  const [testUpdateSwapFeeSuccess, setTestUpdateSwapFeeSuccess] = useState(false);
+
   // CUSTOM
   const [approveSuccess, setApproveSuccess] = useState(false);
   const [isPublishingZkProof, setIsPublishingZkProof] = useState(false);
@@ -77,7 +81,6 @@ function SwapComponent() {
   // TODO: CUSTOM COMPONENTS TO BUILD
   // const isEligibleForPremium = useEligibleForPremiumPlan(walletAddress)
   // const toAmount = useToAmount();
-  // const generateZkProof = () => {}                                  ;
 
   const handleGenerateZkProof = async (input: UserInput<CircuitInputs>) => {
     const timer = setTimeout(() => {
@@ -94,6 +97,14 @@ function SwapComponent() {
   // Use the useWaitForTransaction hook from 'wagmi' to get the transaction receipt
   const { isSuccess: isTxConfirmed } = useWaitForTransaction({
     hash: txHash,
+  });
+
+  // Use state hook to hold the transaction hash
+  const [testSwapFeeTxHash, setTestSwapFeeTxHash] = useState<`0x${string}`>("0x00");
+
+  // Use the useWaitForTransaction hook from 'wagmi' to get the transaction receipt
+  const { isSuccess: isTestSwapFeeTxConfirmed } = useWaitForTransaction({
+    hash: testSwapFeeTxHash,
   });
 
   const fromTokenAllowance = useErc20Allowance({
@@ -140,11 +151,30 @@ function SwapComponent() {
     ],
   });
 
+  const {
+    data: testUpdateSwapFeeData,
+    isSuccess: testUpdateSwapFeeIsSuccess,
+    isError: testUpdateSwapFeeIsError,
+    write: executeTestUpdateSwapFee,
+    error: testUpdateSwapFeeTxError,
+  } = useContractWrite({
+    address: contracts.RoyaltyPool.address,
+    abi: contracts.RoyaltyPool.abi,
+    functionName: "testUpdateFee",
+    args: [100, 1810632682, address],
+  });
+
   useEffect(() => {
     if (swapIsSuccess && swapData) {
       setTxHash(swapData.hash);
     }
   }, [swapIsSuccess, swapData]);
+
+  useEffect(() => {
+    if (testUpdateSwapFeeIsSuccess && testUpdateSwapFeeData) {
+      setTestSwapFeeTxHash(testUpdateSwapFeeData.hash);
+    }
+  }, [testUpdateSwapFeeIsSuccess, testUpdateSwapFeeData]);
 
   useEffect(() => {
     if (isTxConfirmed) {
@@ -154,11 +184,25 @@ function SwapComponent() {
   }, [isTxConfirmed, swapIsError]);
 
   useEffect(() => {
+    if (isTestSwapFeeTxConfirmed) {
+      setIsPublishingZkProof(false);
+      setZkPublishSuccess(true);
+    }
+  }, [isTestSwapFeeTxConfirmed, testUpdateSwapFeeError]);
+
+  useEffect(() => {
     if (swapIsError && swapTxError) {
       setIsSwapping(false);
       setSwapError(swapTxError.message);
     }
   }, [swapIsError, swapTxError]);
+
+  useEffect(() => {
+    if (testUpdateSwapFeeIsError && testUpdateSwapFeeTxError) {
+      setIsPublishingZkProof(false);
+      setTestUpdateSwapFeeError(testUpdateSwapFeeTxError.message);
+    }
+  }, [testUpdateSwapFeeIsError, testUpdateSwapFeeTxError]);
 
   useEffect(() => {
     if (zkPublishingSuccess) {
@@ -193,29 +237,22 @@ function SwapComponent() {
     }
   }, [swapSuccess]);
 
-  // TODO: implement useEffect for after ZK proof published success (showZkPublishSuccess)
+  useEffect(() => {
+    if (isZkProofGenerated) {
+      setShowZKProofGenerated(true);
+      const timer = setTimeout(() => {
+        setShowZKProofGenerated(false);
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isZkProofGenerated]);
 
   const fromTokenIsApproved = fromTokenAllowance.data ? fromTokenAllowance.data > 0n : false;
   return (
     <div className="card shadow-2xl pt-6 pb-2 px-3 bg-white rounded-2xl border-2  min-w-[34rem] max-w-xl transition-shadow">
       <div className="mb-2 mx-4">
         <h2>Swap</h2>
-        {/* <TokenDropdown
-            label="From"
-            tooltipText={"The token you are sending"}
-            options={tokens.map(token => token.data ?? BLANK_TOKEN)}
-            onChange={e => {
-              setFromCurrency(e.target.value);
-              console.log("🚀 ~ file: swapComponent.tsx:107 ~ SwapComponent ~ e:", e.target);
-              fromTokenAllowance.refetch();
-            }}
-          />
-          <TokenDropdown
-            label="To"
-            tooltipText="The token you are receiving"
-            options={tokens.map(token => token.data ?? BLANK_TOKEN)}
-            onChange={e => setToCurrency(e.target.value)}
-          /> */}
       </div>
 
       <div className="w-full flex flex-col gap-1">
@@ -271,6 +308,16 @@ function SwapComponent() {
           </div>
         )}
 
+        {testUpdateSwapFeeError && (
+          <div className="mt-4">
+            <div style={{ fontFamily: "monospace" }} className="alert alert-error overflow-auto">
+              <div>
+                <label>Error: {testUpdateSwapFeeError}</label>
+              </div>
+            </div>
+          </div>
+        )}
+
         {fromTokenIsApproved && (
           <>
             {!zkPublishingSuccess ? (
@@ -284,9 +331,8 @@ function SwapComponent() {
                     isZkProofGenerated
                       ? () => {
                           // TODO: handle publishing ZK proof on-chain
+                          executeTestUpdateSwapFee();
                           setIsPublishingZkProof(true);
-
-                          
                         }
                       : async () => {
                           const input: UserInput<CircuitInputs> = {

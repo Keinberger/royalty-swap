@@ -47,19 +47,20 @@ contract CounterScript is Script {
         // Deploy the hook using CREATE2 //
         // ----------------------------- //
         vm.broadcast();
-        RoyaltyHook royaltyHook = new RoyaltyHook{salt: salt}(IPoolManager(address(manager)), AXIOM_V2_QUERY_ADDRESS, uint64(block.chainid), bytes32(0));
+        RoyaltyHook royaltyHook = new RoyaltyHook{salt: salt}(
+            IPoolManager(address(manager)), AXIOM_V2_QUERY_ADDRESS, uint64(block.chainid), bytes32(0)
+        );
         require(address(royaltyHook) == hookAddress, "CounterTest: hook address mismatch");
 
-         // Additional helpers for interacting with the pool
+        // Additional helpers for interacting with the pool
         vm.startBroadcast();
-        (PoolModifyLiquidityTest lpRouter, PoolSwapTest swapRouter,) =
-            deployRouters(manager);
+        (PoolModifyLiquidityTest lpRouter, PoolSwapTest swapRouter,) = deployRouters(manager);
         vm.stopBroadcast();
 
         // test the lifecycle (create pool, add liquidity, swap)
         vm.startBroadcast();
         testLifecycle(manager, address(royaltyHook), lpRouter, swapRouter);
-        vm.stopBroadcast(); 
+        vm.stopBroadcast();
 
         console.log("failing");
     }
@@ -73,11 +74,7 @@ contract CounterScript is Script {
 
     function deployRouters(IPoolManager manager)
         internal
-        returns (
-            PoolModifyLiquidityTest lpRouter,
-            PoolSwapTest swapRouter,
-            PoolDonateTest donateRouter
-        )
+        returns (PoolModifyLiquidityTest lpRouter, PoolSwapTest swapRouter, PoolDonateTest donateRouter)
     {
         lpRouter = new PoolModifyLiquidityTest(manager);
         swapRouter = new PoolSwapTest(manager);
@@ -85,8 +82,8 @@ contract CounterScript is Script {
     }
 
     function deployTokens() internal returns (MockERC20 token0, MockERC20 token1) {
-        MockERC20 tokenA = new MockERC20("MockA", "A", 18);
-        MockERC20 tokenB = new MockERC20("MockB", "B", 18);
+        MockERC20 tokenA = new MockERC20("Token1", "Token1", 18);
+        MockERC20 tokenB = new MockERC20("Token2", "Token2", 18);
         if (uint160(address(tokenA)) < uint160(address(tokenB))) {
             token0 = tokenA;
             token1 = tokenB;
@@ -113,8 +110,13 @@ contract CounterScript is Script {
 
         // initialize the pool
         int24 tickSpacing = 60;
-        PoolKey memory poolKey =
-            PoolKey(Currency.wrap(address(token0)), Currency.wrap(address(token1)), SwapFeeLibrary.DYNAMIC_FEE_FLAG, tickSpacing, IHooks(hook));
+        PoolKey memory poolKey = PoolKey(
+            Currency.wrap(address(token0)),
+            Currency.wrap(address(token1)),
+            SwapFeeLibrary.DYNAMIC_FEE_FLAG,
+            tickSpacing,
+            IHooks(hook)
+        );
         manager.initialize(poolKey, Constants.SQRT_RATIO_1_1, ZERO_BYTES);
 
         // approve the tokens to the routers
@@ -124,8 +126,7 @@ contract CounterScript is Script {
         token1.approve(address(swapRouter), type(uint256).max);
 
         console.log("approval", token0.allowance(address(msg.sender), address(swapRouter)));
-        console.log("VAL", RoyaltyHook(hook).TESTVAL());
-        
+
         // add full range liquidity to the pool
         lpRouter.modifyLiquidity(
             poolKey,
@@ -146,12 +147,11 @@ contract CounterScript is Script {
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
         swapRouter.swap(poolKey, params, testSettings, abi.encode(msg.sender));
 
-        console.log('balance swapper', token0.balanceOf(address(msg.sender)));
+        console.log("balance swapper", token0.balanceOf(address(msg.sender)));
         console.log("address swap", address(swapRouter));
         console.log("address hook", address(hook));
 
         console.log("token0", address(token0));
-        console.log('token1', address(token1));
-        
+        console.log("token1", address(token1));
     }
 }
