@@ -15,7 +15,7 @@ import {
 
 // TODO: update these
 const volumeMappingSlot = 0;
-const blockInterval = 5;
+const oneMonthInBlocks = 7200 * 30;
 const volumeThreshold = 100e18;
 const VIP_REBATE = 2990;
 
@@ -35,7 +35,7 @@ export interface CircuitInputs {
 // Default inputs to use (only for compiling the circuit).
 // TODO: update these.
 export const defaultInputs = {
-  blockNumber: 20,
+  blockNumber: 5_103_100,
   userAddress: "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
   hookAddress: "0x0304dB7e57e2F6e5fE39Aa498c0bE815374F1859",
   poolId: "0x4bc33d3648d3d594c33099a3c88705855d686b19e9e81d2e6406611823e1a6e1",
@@ -44,8 +44,8 @@ export const defaultInputs = {
 // The Axiom circuit
 export const circuit = async (inputs: CircuitInputs) => {
   // Calculate historical block number for volume computation and future block number for deprecating the obtained fee rebate (if any).
-  const oneMonthBefore = sub(inputs.blockNumber.value(), blockInterval);
-  const oneMonthAfter = add(inputs.blockNumber.value(), blockInterval);
+  const oneMonthBefore = sub(inputs.blockNumber.value(), oneMonthInBlocks);
+  const oneMonthAfter = add(inputs.blockNumber.value(), oneMonthInBlocks);
 
   // Get historical volume one month before the current (given) block.
   // TODO: drill down the mapping.
