@@ -131,9 +131,9 @@ function SwapComponent() {
       {
         currency0: contracts.Token0.address,
         currency1: contracts.Token1.address,
-        fee: poolFee,
+        fee: "0x800000",
         tickSpacing: Number(60),
-        hooks: contracts.RoyaltyPool.address,
+        hooks: "0x03044ca8CEd0969Da2752a803cE0b082d155a78f",
       },
       {
         zeroForOne: true,

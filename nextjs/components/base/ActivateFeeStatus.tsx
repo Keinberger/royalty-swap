@@ -16,7 +16,7 @@ export default function ActivateFeeStatus({
           <span className="font-bold text-[#868386]">Current Fee</span>
         </div>
         <div>
-          <span className="font-bold text-[#868386]">0.01%</span>
+          <span className="font-bold text-[#868386]">0.3%</span>
         </div>
       </div>
       <div className="px-4 mb-4 flex flex-row justify-between">
