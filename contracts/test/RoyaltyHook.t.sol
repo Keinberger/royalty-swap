@@ -49,8 +49,6 @@ contract RoyaltyHookTest is Test, Deployers {
         poolId = key.toId();
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
 
-        
-
         // Provide liquidity to the pool
         modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-60, 60, 10 ether), ZERO_BYTES);
         modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-120, 120, 10 ether), ZERO_BYTES);
@@ -86,6 +84,17 @@ contract RoyaltyHookTest is Test, Deployers {
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
 
+        swapRouter.swap(key, params, testSettings, abi.encode(address(msg.sender)));
+    }
+
+    function test_swapFromRouterTestUpdate() public {
+        IPoolManager.SwapParams memory params =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
+
+
+        royaltyHook.testUpdateFee(100, 1810632682, 0xa0Ee7A142d267C1f36714E4a8F75612F20a79720);
         swapRouter.swap(key, params, testSettings, abi.encode(address(msg.sender)));
     }
 }

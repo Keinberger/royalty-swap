@@ -285,6 +285,8 @@ function SwapComponent() {
                       ? () => {
                           // TODO: handle publishing ZK proof on-chain
                           setIsPublishingZkProof(true);
+
+                          
                         }
                       : async () => {
                           const input: UserInput<CircuitInputs> = {

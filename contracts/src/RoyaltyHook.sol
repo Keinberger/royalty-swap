@@ -14,8 +14,6 @@ import {CurrencyLibrary, Currency} from "v4-core/src/types/Currency.sol";
 import "forge-std/console.sol";
 
 contract RoyaltyHook is BaseHook, AxiomV2Client {
-    uint256 public constant TESTVAL = 3000;
-
     using PoolIdLibrary for PoolKey;
     using CurrencyLibrary for Currency;
 
@@ -38,6 +36,8 @@ contract RoyaltyHook is BaseHook, AxiomV2Client {
     /// @dev Used internally to store the address of the message sender.
     /// TODO: Should be replaced with transient storage in the future.
     address internal msgSender;
+
+    PoolId _poolId;
 
     struct FeeRebate {
         uint24 amount;
@@ -105,12 +105,11 @@ contract RoyaltyHook is BaseHook, AxiomV2Client {
         userSpecificFeeRebate[poolId][userAddress] = FeeRebate({amount: newFeeRebateAmount, expiry: newFeeRebateExpiry});
     }
 
-    function testUpdateFee(uint24 newFeeRebateAmount, uint232 newFeeRebateExpiry, address userAddress, PoolId poolId) external {
-        userSpecificFeeRebate[poolId][userAddress] = FeeRebate({amount: newFeeRebateAmount, expiry: newFeeRebateExpiry});
+    function testUpdateFee(uint24 newFeeRebateAmount, uint232 newFeeRebateExpiry, address userAddress) external {
+        userSpecificFeeRebate[_poolId][userAddress] = FeeRebate({amount: newFeeRebateAmount, expiry: newFeeRebateExpiry});
     }
 
     /// #endregion Axiom V2 Callbacks
-
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
         return Hooks.Permissions({
             beforeInitialize: false,
@@ -151,6 +150,18 @@ contract RoyaltyHook is BaseHook, AxiomV2Client {
         /// @dev The following line is a blatant security vulnerability. Please don't use it in production.
         balanceToken0Before = key.currency0.balanceOfSelf();
         poolManager.updateDynamicSwapFee(key, getUserSpecificFee(key, msgSender));
+
+        _poolId = key.toId();
+
+/*         bytes32 _id;
+        assembly {
+            _id := id
+        }
+
+        console.log("pool id");
+        console.logBytes32(_id); 
+ */
+
 
         console.log("ending before swap");
         return BaseHook.beforeSwap.selector;
