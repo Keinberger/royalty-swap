@@ -82,8 +82,8 @@ contract CounterScript is Script {
     }
 
     function deployTokens() internal returns (MockERC20 token0, MockERC20 token1) {
-        MockERC20 tokenA = new MockERC20("Token1", "Token1", 18);
-        MockERC20 tokenB = new MockERC20("Token2", "Token2", 18);
+        MockERC20 tokenA = new MockERC20("USDC", "USDC", 18);
+        MockERC20 tokenB = new MockERC20("USDT", "USDT", 18);
         if (uint160(address(tokenA)) < uint160(address(tokenB))) {
             token0 = tokenA;
             token1 = tokenB;
